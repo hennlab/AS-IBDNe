@@ -140,11 +140,3 @@ rule run_rfmix:
     """
     python scripts/RunRFMix.py -e 2 -w 0.2 --num-threads {threads} --use-reference-panels-in-EM --forward-backward PopPhased {input.all} {params} {input.snp} -o {output}
     """
-
-
-
-
-    cut -d" " -f2 results/phasing/nama_tgp_qc.chr10.phased.sample | sed '1d' > results/RFMIX/ref.keep # all ids
-    cut -f2 data/ref_nama.inds > results/RFMIX/nama_tgp_qc.ref # reference ids
-    grep -v -f results/RFMIX/nama_tgp_qc.ref results/RFMIX/ref.keep > results/RFMIX/admix.keep # find lines unique to ref.keep - ids not in the ref set
-    python scripts/shapeit2rfmix.py --shapeit_hap_ref results/phasing/nama_tgp_qc.chr10.phased.haps --shapeit_hap_admixed results/phasing/nama_tgp_qc.chr10.phased.haps --shapeit_sample_ref results/phasing/nama_tgp_qc.chr10.phased.sample --shapeit_sample_admixed results/phasing/nama_tgp_qc.chr10.phased.sample --ref_keep results/RFMIX/ref.keep --admixed_keep results/RFMIX/admix.keep --chr 10 --genetic_map /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/chr10.gmap.txt --out results/RFMIX/nama_tgp_qc
