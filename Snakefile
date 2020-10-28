@@ -10,15 +10,21 @@ import os
 # SET-UP
 # -------
 
-DATASET = config['dataset']
-GMAP = config['gmap']
-REF=config['ref']
-REF_IDS=config['ids_ref']
+DATASET = config['dataset'] # Name of the dataset. Must match input files data/{dataset}.bed .bim .fam
+GMAP = config['gmap'] # path to genetic map files for each chromosome
+REF=config['ref'] # path to reference haps/sample/legend files, including prefix.
+REF_IDS=config['ids_ref'] # file containing reference sample IDS (col2) and population (col1)
+ADMIX_IDS=config['ids_admix'] # file containing admixed sample IDs (col2) and population (col1)
+POP_FILE= config['pops'] # file listing all reference populations (exclude the admixed population)
 
-
+POPS= [line.strip() for line in open(POP_FILE, 'r')]
 CHR = [i for i in range(1,23)]
 IBDne_THREADs = 10
 RFMIX_THREADs = 10
+
+def generate_pop_input(wildcards):
+    files = expand("results/RFMIX/{dataset}.{pop}.keep", pop=POPS, dataset=DATASET)
+    return files
 
 rule all:
   input:
@@ -112,8 +118,7 @@ rule fill_gaps:
 rule rfmix_input:
   input:
     haps = "results/phasing/{dataset}.chr{chrnum}.phased.haps",
-    sample = "results/phasing/{dataset}.chr{chrnum}.phased.sample",
-    ref = REF_IDS
+    sample = "results/phasing/{dataset}.chr{chrnum}.phased.sample"
   output:
     multiext("results/RFMIX/{dataset}_chr{chrnum}", ".alleles", ".snp_locations", ".map")
   params:
@@ -121,10 +126,29 @@ rule rfmix_input:
     out = "results/RFMIX/{dataset}"
   shell:
     """
-    cut -d" " -f2 results/phasing/{wildcards.dataset}.chr{wildcards.chrnum}.phased.sample | sed '1d' > results/RFMIX/ref.keep # all ids
-    cut -f2 {input.ref} > results/RFMIX/{wildcards.dataset}.ref # reference ids
-    grep -v -f results/RFMIX/{wildcards.dataset}.ref results/RFMIX/ref.keep > results/RFMIX/admix.keep # find lines unique to ref.keep - ids not in the ref set
-    python scripts/shapeit2rfmix.py --shapeit_hap_ref {input.haps} --shapeit_hap_admixed {input.haps} --shapeit_sample_ref {input.sample} --shapeit_sample_admixed {input.sample} --ref_keep results/RFMIX/ref.keep --admixed_keep results/RFMIX/admix.keep --chr {wildcards.chrnum} --genetic_map {params.map} --out {params.out}
+    python scripts/shapeit2rfmix.py --shapeit_hap_ref {input.haps} --shapeit_hap_admixed {input.haps} --shapeit_sample_ref {input.sample} --shapeit_sample_admixed {input.sample} --ref_keep {REF_IDS} --admixed_keep {ADMIX_IDS} --chr {wildcards.chrnum} --genetic_map {params.map} --out {params.out}
+    """
+
+rule parse_pops:
+  input:
+    pop = POP_FILE,
+    ref = REF_IDS
+  output:
+    expand("results/RFMIX/{dataset}.{pop}.keep", pop=POPS, dataset=DATASET)
+  shell:
+    """
+    for line in {input.pop} ; do grep $line {input.ref} > results/RFMIX/${line}.keep; done
+    """
+
+rule fix_classes:
+  input:
+    pop = generate_pop_input,
+    samp = "results/RFMIX/{dataset}.sample"
+  output:
+    "results/RFMIX/{dataset}.fix.classes"
+  shell:
+    """
+    python scripts/classes.py --ref {input.pop} --sample {input.samp} --out {output}
     """
 
 rule run_rfmix:
@@ -134,7 +158,7 @@ rule run_rfmix:
   output:
     "results/RFMIX/{dataset}.chr{chrnum}.rfmix"
   params:
-    "results/RFMIX/{dataset}.classes"
+    "results/RFMIX/{dataset}.fix.classes"
   threads: 4
   shell:
     """

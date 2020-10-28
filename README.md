@@ -19,9 +19,30 @@ conda activate IBDne-env
 ```bash
 plink --bfile nama_tgp --geno 0.05 --mind 0.1 --make-bed --out nama_tgp_qc
 ```
+3. Set up config file
+The config file will contain all the file paths that change with every run of the snakemake pipeline.
 
-3. Run Snakemake
+Example file:
+```bash
+gmap: /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/
+
+dataset: nama_tgp_qc_pops
+
+ref: /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3
+
+ids_ref: data/reference.keep
+
+ids_admix: data/admix.keep
+
+pop: data/population.ids.txt
+```
+
+4. Set up working directory
+data - contains input bed/bim/fam files. must be named according to {dataset}.bed /.bim /.fam
+  must include both reference and admixed individuals
+
+5. Run Snakemake
 
 ```bash
-nice /share/hennlab/progs/miniconda3/bin/snakemake -R trim_phase --config gmap=/share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/ dataset=nama_tgp_qc ref=/share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3 ids_ref=data/ref_nama.inds -j 10
+nice /share/hennlab/progs/miniconda3/bin/snakemake --forceall --configfile config/config.yaml -j 10
 ```
