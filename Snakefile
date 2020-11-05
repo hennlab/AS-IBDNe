@@ -33,7 +33,15 @@ POP_INPUT_LIST = s.join(LIST)
 
 rule all:
   input:
-    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix", dataset = DATASET, chrnum = CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.ForwardBackward.txt", dataset = DATASET, chrnum = CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.ForwardBackward.txt", dataset = DATASET, chrnum = CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.ForwardBackward.txt",dataset = DATASET, chrnum = CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.Viterbi.txt",dataset = DATASET, chrnum = CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.Viterbi.txt", dataset = DATASET, chrnum = CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.Viterbi.txt", dataset = DATASET, chrnum = CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased0.txt",dataset = DATASET, chrnum = CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased1.txt",dataset = DATASET, chrnum = CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased2.txt",dataset = DATASET, chrnum = CHR),
     expand("results/RFMIX/{dataset}.{pops}.keep", pops=POPS, dataset=DATASET)
 
 
@@ -165,9 +173,19 @@ rule run_rfmix:
     snp = "results/RFMIX/{dataset}_chr{chrnum}.snp_locations",
     cl = "results/RFMIX/{dataset}.fix.classes"
   output:
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.ForwardBackward.txt",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.ForwardBackward.txt",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.ForwardBackward.txt",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.Viterbi.txt",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.Viterbi.txt",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.Viterbi.txt",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased0.txt",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased1.txt",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased2.txt",
+  params:
     "results/RFMIX/{dataset}.chr{chrnum}.rfmix"
   threads: 4
   shell:
     """
-    python scripts/RunRFMix.py -e 2 -w 0.2 --num-threads {threads} --use-reference-panels-in-EM --forward-backward PopPhased {input.all} {input.cl} {input.snp} -o {output}
+    python scripts/RunRFMix.py -e 2 -w 0.2 --num-threads {threads} --use-reference-panels-in-EM --forward-backward PopPhased {input.all} {input.cl} {input.snp} -o {params}
     """

@@ -47,5 +47,5 @@ data - contains input bed/bim/fam files. must be named according to {dataset}.be
 5. Run Snakemake
 
 ```bash
-nice /share/hennlab/progs/miniconda3/bin/snakemake -R parse_pops --configfile config/config.yaml -j 10
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config.yaml -j 10
 ```
