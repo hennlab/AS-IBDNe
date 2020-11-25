@@ -47,5 +47,66 @@ data - contains input bed/bim/fam files. must be named according to {dataset}.be
 5. Run Snakemake
 
 ```bash
-nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config.yaml -j 10
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config.yaml -j 20
+```
+
+6. Plot karyograms after running RFMix
+
+```bash
+python scripts/collapse_ancestry.py \
+--rfmix results/RFMIX/nama_tgp_qc_pops.chr1.rfmix.2.Viterbi.txt \
+--snp_locations results/RFMIX/nama_tgp_qc_pops_chr1.snp_locations \
+--fbk results/RFMIX/nama_tgp_qc_pops.chr1.rfmix.2.ForwardBackward.txt \
+--fbk_threshold 0.9 \
+--ind SA2046 \
+--ind_info results/RFMIX/nama_tgp_qc_pops.sample \
+--pop_labels GBR,CHB,LWK,NAMA \
+--out SA2046
+
+python scripts/collapse_ancestry.py \
+--rfmix results/RFMIX/nama_tgp_qc_pops.chr1.rfmix.2.Viterbi.txt \
+--snp_locations results/RFMIX/nama_tgp_qc_pops_chr1.snp_locations \
+--fbk results/RFMIX/nama_tgp_qc_pops.chr1.rfmix.2.ForwardBackward.txt \
+--fbk_threshold 0.9 \
+--ind SAK050 \
+--ind_info results/RFMIX/nama_tgp_qc_pops.sample \
+--pop_labels GBR,CHB,LWK,NAMA \
+--out SAK050
+
+python scripts/collapse_ancestry.py \
+--rfmix results/RFMIX/nama_tgp_qc_pops.chr1.rfmix.2.Viterbi.txt \
+--snp_locations results/RFMIX/nama_tgp_qc_pops_chr1.snp_locations \
+--fbk results/RFMIX/nama_tgp_qc_pops.chr1.rfmix.2.ForwardBackward.txt \
+--fbk_threshold 0.9 \
+--ind SA2106 \
+--ind_info results/RFMIX/nama_tgp_qc_pops.sample \
+--pop_labels GBR,CHB,LWK,NAMA \
+--out SA2106
+
+python scripts/collapse_ancestry.py \
+--rfmix results/RFMIX/nama_tgp_qc_pops.chr1.rfmix.2.Viterbi.txt \
+--snp_locations results/RFMIX/nama_tgp_qc_pops_chr1.snp_locations \
+--fbk results/RFMIX/nama_tgp_qc_pops.chr1.rfmix.2.ForwardBackward.txt \
+--fbk_threshold 0.9 \
+--ind SA2085 \
+--ind_info results/RFMIX/nama_tgp_qc_pops.sample \
+--pop_labels GBR,CHB,LWK,NAMA \
+--out SA2085
+
+
+python scripts/plot_karyogram.py \
+--bed_a SA2046_A.bed \
+--bed_b SA2046_B.bed \
+--ind SA2046 \
+--pop_order GBR,CHB,LWK,NAMA \
+--out SA2046.png
+
+python scripts/plot_karyogram.py \
+--bed_a SA2046_A.bed \
+--bed_b SA2046_B.bed \
+--ind SAK050 \
+--pop_order GBR,CHB,LWK,NAMA \
+--out SAK050.png
+
+
 ```
