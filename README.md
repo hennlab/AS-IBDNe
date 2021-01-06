@@ -18,6 +18,7 @@ conda activate IBDne-env
 2. QC beforehand
 ```bash
 plink --bfile nama_tgp --geno 0.05 --mind 0.1 --make-bed --out nama_tgp_qc
+# with populations in family ID column --> nama_tgp_qc_pops
 ```
 
 3. Set up config file
@@ -48,6 +49,8 @@ data - contains input bed/bim/fam files. must be named according to {dataset}.be
 
 ```bash
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config.yaml -j 20
+nice /share/hennlab/progs/miniconda3/bin/snakemake -R rfmix_input --configfile config/config.yaml -j 20
+
 ```
 
 6. Plot karyograms after running RFMix
@@ -104,9 +107,9 @@ python scripts/plot_karyogram.py \
 python scripts/plot_karyogram.py \
 --bed_a SA2046_A.bed \
 --bed_b SA2046_B.bed \
---ind SAK050 \
+--ind SA2106 \
 --pop_order GBR,CHB,LWK,NAMA \
---out SAK050.png
+--out SA2106.png
 
 
 ```
