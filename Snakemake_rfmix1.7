@@ -16,7 +16,6 @@ REF=config['ref'] # path to reference haps/sample/legend files, including prefix
 REF_IDS=config['ids_ref'] # file containing reference sample IDS (col2) and population (col1)
 ADMIX_IDS=config['ids_admix'] # file containing admixed sample IDs (col2) and population (col1)
 POP_FILE= config['pops'] # file listing all reference populations (exclude the admixed population)
-N_ANC = 
 
 POPS= [line.strip() for line in open(POP_FILE, 'r')]
 CHR = [i for i in range(1,23)]
@@ -34,11 +33,18 @@ POP_INPUT_LIST = s.join(LIST)
 
 rule all:
   input:
-    expand("results/IBD-segs/{dataset}.chr{chrnum}.log", dataset=DATASET, chrnum=CHR),
-    expand("results/IBD-segs/{dataset}.chr{chrnum}.hbd.gz", dataset=DATASET, chrnum=CHR),
-    expand("results/IBD-segs/{dataset}.chr{chrnum}.ibd.gz",  dataset=DATASET, chrnum=CHR),
-    expand("results/rephased/{dataset}.chr{chrnum}.rfmix.Viterbi.refinedibdphase", dataset=DATASET, chrnum=CHR)
-
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.fb-probs.tsv", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.fb-sis.tsv", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.rfmix.Q", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.viterbi-msp.tsv",dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.fb-probs.tsv", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.fb-sis.tsv", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.rfmix.Q", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.viterbi-msp.tsv", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.fb-probs.tsv", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.fb-sis.tsv", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.rfmix.Q", dataset=DATASET, chrnum=CHR),
+    expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.viterbi-msp.tsv", dataset=DATASET, chrnum=CHR)
 # ---------
 #  Phasing
 # ---------
@@ -167,45 +173,37 @@ rule run_rfmix:
     snp = "results/RFMIX/{dataset}_chr{chrnum}.snp_locations",
     cl = "results/RFMIX/{dataset}.fix.classes"
   output:
-    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.ForwardBackward.txt",
-    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.ForwardBackward.txt",
-    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.ForwardBackward.txt",
-    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.Viterbi.txt",
-    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.Viterbi.txt",
-    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.Viterbi.txt",
-    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased0.txt",
-    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased1.txt",
-    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased2.txt",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.fb-probs.tsv", # subpopulation probabilities for haplotypes.
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.fb-sis.tsv", # haplotypes
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.rfmix.Q",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.0.viterbi-msp.tsv",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.fb-probs.tsv",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.fb-sis.tsv",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.rfmix.Q",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.1.viterbi-msp.tsv",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.fb-probs.tsv",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.fb-sis.tsv",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.rfmix.Q",
+    "results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.viterbi-msp.tsv"
   params:
     "results/RFMIX/{dataset}.chr{chrnum}.rfmix"
   threads: 20
   shell:
     """
-    python scripts/RunRFMix.py -e 2 -w 0.2 --num-threads {threads} --use-reference-panels-in-EM --forward-backward PopPhased {input.all} {input.cl} {input.snp} -o {params}
+    /share/hennlab/progs/RFMix/rfmix-v1.71-r1/RFMix_PopPhased -e 2 -w 0.2 --n-threads={threads} --include-reference --forward-backward --alleles-file={input.all} --classes-file={input.cl} --locations-file={input.snp} -o {params}
     """
 
-rule rephase_rfmix:
-  input:
-    admids = ADMIX_IDS,
-    vcf = "results/phasing/{dataset}.chr{chrnum}.phased.vcf",
-    allRe = "results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased2.txt",
-    Vit = "results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.Viterbi.txt"
-  output:
-    "results/rephased/{dataset}.chr{chrnum}.rfmix.Viterbi.refinedibdphase"
-  shell:
-    """
-    cut -d" " -f2 {input.admids} > data/admix_individuals
-    python scripts/rephasevit.py {input.vcf} data/admix_individuals {input.allRe} {input.Vit} > {output}
-    """
 
-rule filter_pop_ancestry:
-  input:
-  output:
-  shell:
-    nanc=3
-    for i in `seq 11`; do
-      python filter_gapfilled_ibd_ancestry.py results/chrom${i}_phased.ibd results/chrom${i}_filled.ibd results/chrom${i}${x}_rfmix_Viterbi_refinedibdphase $nanc > results/chrom${i}_allanc.gapfilled_ibd
-     for anc in 1 2 3; do
-       cat results/chrom${i}_allanc.gapfilled_ibd | grep -i "[[:space:]]${anc}"'$' | cut -f1-8 -d' ' > results/chrom${i}_anc${anc}.gapfilled_ibd
-      done
-    done
+
+#rule rephase_rfmix:
+  #input:
+#    admids = ADMIX_IDS,
+  #  vcf = expand("results/phasing/{dataset}.chr{chrnum}.phased.vcf", dataset=DATASET, chrnum=CHR),
+  #  allRe = expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.allelesRephased2.txt", dataset=DATASET, chrnum=CHR),
+  #  Vit = expand("results/RFMIX/{dataset}.chr{chrnum}.rfmix.2.Viterbi.txt", dataset=DATASET, chrnum=CHR)
+#  output:
+#    "results/rephased/chr{chrnum}.rfmix.Viterbi.refinedibdphase"
+  #shell:
+#    """
+#    python rephasevit.py {input.vcf} {input.admids} {input.allRe} {input.Vit} > {output}
+  #  """

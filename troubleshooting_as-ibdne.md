@@ -1,8 +1,8 @@
-1. Running King to check for relatedness between individuals
+### 1. Running King to check for relatedness between individuals
 
+```bash
 module load king
 king -b nama_tgp_qc.bed --ibdseg --cpus 15 --prefix nama_tgp_qc
-
 
 king -b nama_tgp_qc.bed --ibs --cpus 15 --prefix nama_tgp_qc
 
@@ -39,15 +39,15 @@ IBS and relationship inference across families starts at Tue Dec 29 14:39:28 202
 15 CPU cores are used.
                                          ends at Tue Dec 29 14:39:31 2020
 Between-family IBS data saved in file nama_tgp_qc.ibs0
-
+```
 
 To solve the issue with the chromosomes all looking like the same color because of relatedness in the namas:
 
-1. Create new plink files with only the reference individuals.
+### 1. Create new plink files with only the reference individuals.
 ```
 plink --bfile nama_tgp_qc_pops --keep reference.keep --make-bed --out ref_samples
 ```
-2. Run king on reference plink files to check for relatedness
+### 2. Run king on reference plink files to check for relatedness
 ```
 module load king
 king -b ref_samples.bed --ibdseg --cpus 15 --prefix ref_samples_king
@@ -75,14 +75,14 @@ An alternative list of 35 to-be-removed individuals saved in file kingunrelated_
 Extracting a subset of unrelated individuals ends at Tue Jan  5 11:38:02 2021
 ```
 
-3. Keep the unrelated individuals in the reference population
+### 3. Keep the unrelated individuals in the reference population
 
 ```
 plink --bfile ref_samples --keep kingunrelated.txt --make-bed --out ref_unrelated
 ```
 
 
-4. Combine with CDB data
+### 4. Combine with CDB data
 
 ```
 plink --bfile ref_unrelated --bmerge /share/hennlab/data/snp-array/SAfrica_IlluminaArrays/CDB_NCTB_H3Africa/CDB/SNP-QC/cdb_80.bed /share/hennlab/data/snp-array/SAfrica_IlluminaArrays/CDB_NCTB_H3Africa/CDB/SNP-QC/cdb_80.bim /share/hennlab/data/snp-array/SAfrica_IlluminaArrays/CDB_NCTB_H3Africa/CDB/SNP-QC/cdb_80.fam --make-bed --out ref_CDB_merge
@@ -134,7 +134,7 @@ plink --bfile ref_bal_CDB_merge_geno0.05 --pca 4 --out ref_bal_CDB_merge_geno0.0
 PCA looks as expected. proceeding with running as-ibdne.
 
 
-5. Run as-ibdne on the new dataset
+### 5. Run as-ibdne on the new dataset
 
 ```
 sed 's/\t/ /g' balanced_ref_unrelated_smps.txt > balanced_ref_unrelated_smps.ref.keep
@@ -159,5 +159,45 @@ pops: data/cdb_merge_pops.txt
 Run snakemake
 
 ```bash
-nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config_ref_CDB_merge.yaml -j 20
+nice -5 /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config_ref_CDB_merge.yaml -j 20
 ```
+
+Check on karyograms
+```
+python scripts/collapse_ancestry.py \
+--rfmix results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.Viterbi.txt \
+--snp_locations results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.snp_locations \
+--fbk results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.ForwardBackward.txt \
+--fbk_threshold 0.9 \
+--ind SA3097 \
+--ind_info results/RFMIX/ref_bal_CDB_merge_geno0.05.sample \
+--pop_labels GBR,CHB,LWK,NAMA \
+--out SA3097
+```
+
+python scripts/plot_karyogram.py \
+--bed_a SA3097_A.bed \
+--bed_b SA3097_B.bed \
+--ind SA3097 \
+--pop_order GBR,CHB,LWK,NAMA \
+--out SA3097.png
+
+## Plot 6 karyograms for CDB and send to Austin & Brenna
+
+SA3107, SA3140, SA3154, SA3124, SA3089, SA3097
+
+SA3060 SA3188 SA3164
+
+### Testing step 7 script
+
+## implementing new rfmix version 2.3
+
+./rfmix -f <query VCF/BCF file>
+	-r <reference VCF/BCF file>
+	-m <sample map file>
+	-g <genetic map file>
+	-o <output basename>
+	--chromosome=<chromosome to analyze>
+
+
+python scripts/RunRFMix.py -e 2 -w 0.2 --num-threads {threads} --use-reference-panels-in-EM --forward-backward PopPhased {input.all} {input.cl} {input.snp} -o {params}

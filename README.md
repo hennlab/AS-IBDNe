@@ -50,7 +50,7 @@ data - contains input bed/bim/fam files. must be named according to {dataset}.be
 ```bash
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config.yaml -j 20
 nice /share/hennlab/progs/miniconda3/bin/snakemake -R rfmix_input --configfile config/config.yaml -j 20
-
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config_ref_CDB_merge.yaml -j 20
 ```
 
 6. Plot karyograms after running RFMix
@@ -113,3 +113,40 @@ python scripts/plot_karyogram.py \
 
 
 ```
+
+## Getting versions 1.7 running:
+
+in version 1.5: --use-reference-panels-in-EM flag (not using this flag means reference panels discarded after initial inference step) isn't in version 1.7
+
+Version 1.7 does have --include-reference (tree building includes reference haplotypes in tip node counts, not just admixed. (see manual))
+
+```
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config_ref_CDB_merge.yaml -j 20
+```
+
+
+Deciphering the output files of three different versions:
+
+RFMIX 1.5.4:
+- ForwardBackward.txt
+    - one row per SNP and one column per ancestry.
+    - Value in each column is posteriorprobability of that ancestry t that SP in that haplotype.
+- Viterbi.txt
+    - One rowper SNP and one column er amixed halotype
+- allelesRephased0.txt
+    - one rowper SNP and one column per aplotype. Values are 0or1, wher each SNP has had ts alelesconverte to binary frmat
+
+RFMMIX 1.7:
+- fb-probs.tsv
+- fb-sis.tsv
+- rfmix.Q
+- viterbi-msp.tsv
+
+RFMix2.0:
+- msp.tsv: the most likely assignment of subpopulations per CRF point (Viterbi)
+    - rows corresponding to genomic position and columns corresponding to haplotypes
+    - condensed such that CRF windows are combined if all query samples are in the sample subpopulations for successive windows. Thus, each line might represent several CRF points.
+- fb.tsv: marginal probabilities of each subpopulation being the ancestral population of the corresponding CRF point (FwBw)
+    - rows corresponding to genomic position and columns corresponding to haplotypes
+    - haplotypes are tab delimited, but the array of probabilities for each haplotype at each window (row) is a set of space delimited columns within each tab delimited haplotype   column
+- rfmix.Q: Global diploid ancestry estimates
