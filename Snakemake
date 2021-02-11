@@ -16,7 +16,7 @@ REF=config['ref'] # path to reference haps/sample/legend files, including prefix
 REF_IDS=config['ids_ref'] # file containing reference sample IDS (col2) and population (col1)
 ADMIX_IDS=config['ids_admix'] # file containing admixed sample IDs (col2) and population (col1)
 POP_FILE= config['pops'] # file listing all reference populations (exclude the admixed population)
-N_ANC = 
+N_ANC = len(open(POP_FILE).readlines())
 
 POPS= [line.strip() for line in open(POP_FILE, 'r')]
 CHR = [i for i in range(1,23)]
@@ -37,7 +37,8 @@ rule all:
     expand("results/IBD-segs/{dataset}.chr{chrnum}.log", dataset=DATASET, chrnum=CHR),
     expand("results/IBD-segs/{dataset}.chr{chrnum}.hbd.gz", dataset=DATASET, chrnum=CHR),
     expand("results/IBD-segs/{dataset}.chr{chrnum}.ibd.gz",  dataset=DATASET, chrnum=CHR),
-    expand("results/rephased/{dataset}.chr{chrnum}.rfmix.Viterbi.refinedibdphase", dataset=DATASET, chrnum=CHR)
+    expand("results/rephased/{dataset}.chr{chrnum}.rfmix.Viterbi.refinedibdphase", dataset=DATASET, chrnum=CHR),
+    expand("results/rephased/{dataset}.chr{chrnum}.anc{anc}.gapfilled_ibd", dataset=DATASET, chrnum=CHR, anc=N_ANC)
 
 # ---------
 #  Phasing
@@ -200,12 +201,16 @@ rule rephase_rfmix:
 
 rule filter_pop_ancestry:
   input:
+    filled = "results/IBD-segs/{dataset}.chr{chrnum}.filled.ibd",
+    phased = "results/IBD-segs/{dataset}.chr{chrnum}.ibd.gz",
+    refine = "results/rephased/{dataset}.chr{chrnum}.rfmix.Viterbi.refinedibdphase"
   output:
+    unzip = "results/IBD-segs/{dataset}.chr{chrnum}.ibd",
+    all = "results/rephased/{dataset}.chr{chrnum}.allanc.gapfilled.ibd",
+    anc = "results/rephased/{dataset}.chr{chrnum}.anc{anc}.gapfilled_ibd"
   shell:
-    nanc=3
-    for i in `seq 11`; do
-      python filter_gapfilled_ibd_ancestry.py results/chrom${i}_phased.ibd results/chrom${i}_filled.ibd results/chrom${i}${x}_rfmix_Viterbi_refinedibdphase $nanc > results/chrom${i}_allanc.gapfilled_ibd
-     for anc in 1 2 3; do
-       cat results/chrom${i}_allanc.gapfilled_ibd | grep -i "[[:space:]]${anc}"'$' | cut -f1-8 -d' ' > results/chrom${i}_anc${anc}.gapfilled_ibd
-      done
-    done
+    """
+    gunzip {input.phased}
+    python scripts/filter_gapfilled_ibd_ancestry.py {output.unzip} {input.filled} {input.refine} {N_ANC} > {output.all}
+    cat {output.all} | grep -i "[[:space:]]{wildcards.anc}"'$' | cut -f1-8 -d' ' > {output.anc}
+    """
