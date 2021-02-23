@@ -98,11 +98,11 @@ python scripts/collapse_ancestry.py \
 
 
 python scripts/plot_karyogram.py \
---bed_a SA2046_A.bed \
---bed_b SA2046_B.bed \
---ind SA2046 \
+--bed_a SA3107_A.bed \
+--bed_b SA3107_B.bed \
+--ind SA3107 \
 --pop_order GBR,CHB,LWK,NAMA \
---out SA2046.png
+--out SA3107.png
 
 python scripts/plot_karyogram.py \
 --bed_a SA2046_A.bed \
@@ -130,11 +130,11 @@ Deciphering the output files of three different versions:
 RFMIX 1.5.4:
 - ForwardBackward.txt
     - one row per SNP and one column per ancestry.
-    - Value in each column is posteriorprobability of that ancestry t that SP in that haplotype.
+    - Value in each column is posteriorprobability of that ancestryt that SP n that haplotype.
 - Viterbi.txt
-    - One rowper SNP and one column er amixed halotype
+    - One rowper SNP and one columner amixed alotype
 - allelesRephased0.txt
-    - one rowper SNP and one column per aplotype. Values are 0or1, wher each SNP has had ts alelesconverte to binary frmat
+    - one rowper SNP and one column peraplotype. Values are 0or1, wher each SNP has ad t allesconverte to binry frmat
 
 RFMMIX 1.7:
 - fb-probs.tsv

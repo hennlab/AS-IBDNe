@@ -47,12 +47,12 @@ rule trim_phase:
     multiext("results/phasing/{dataset}.{type}.chr{chrnum}", ".bed", ".bim", ".fam")
   output:
     multiext("results/phasing/{dataset}.{type}.chr{chrnum}.phased", ".haps", ".sample"),
-    log = "shapeit_log/{dataset}_{type}.chr{chrnum}.phased.log"
+    "shapeit_log/{dataset}.{type}_chr{chrnum}.phased.log"
   params:
     inputmap = GMAP+"chr{chrnum}.gmap.txt",
     in_pre="results/phasing/{dataset}.{type}.chr{chrnum}",
     out_pre="results/phasing/{dataset}.{type}.chr{chrnum}.phased",
-    log_pre="shapeit_log/{dataset}_{type}.chr{chrnum}.phased"
+    log_pre="shapeit_log/{dataset}.{type}_chr{chrnum}.phased"
   threads: 10
   shell:
     """

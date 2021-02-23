@@ -27,6 +27,9 @@ def generate_pop_input(wildcards):
     files = expand("results/RFMIX/{dataset}.{pops}.keep", pops=POPS, dataset=DATASET)
     return files
 
+wildcard_constraints:
+    chrnum="\d+"
+
 LIST = ["results/RFMIX/" + DATASET + "."+ p + ".keep" for p in POPS]
 s = ","
 POP_INPUT_LIST = s.join(LIST)
@@ -38,7 +41,7 @@ rule all:
     expand("results/IBD-segs/{dataset}.chr{chrnum}.hbd.gz", dataset=DATASET, chrnum=CHR),
     expand("results/IBD-segs/{dataset}.chr{chrnum}.ibd.gz",  dataset=DATASET, chrnum=CHR),
     expand("results/rephased/{dataset}.chr{chrnum}.rfmix.Viterbi.refinedibdphase", dataset=DATASET, chrnum=CHR),
-    expand("results/rephased/{dataset}.chr{chrnum}.anc{anc}.gapfilled_ibd", dataset=DATASET, chrnum=CHR, anc=N_ANC)
+    expand("results/rephased/{dataset}.chr{chrnum}.anc{anc}.gapfill.ibd", dataset=DATASET, chrnum=CHR, anc=N_ANC)
 
 # ---------
 #  Phasing
@@ -199,18 +202,46 @@ rule rephase_rfmix:
     python scripts/rephasevit.py {input.vcf} data/admix_individuals {input.allRe} {input.Vit} > {output}
     """
 
-rule filter_pop_ancestry:
+rule filter_pop:
   input:
     filled = "results/IBD-segs/{dataset}.chr{chrnum}.filled.ibd",
     phased = "results/IBD-segs/{dataset}.chr{chrnum}.ibd.gz",
     refine = "results/rephased/{dataset}.chr{chrnum}.rfmix.Viterbi.refinedibdphase"
   output:
     unzip = "results/IBD-segs/{dataset}.chr{chrnum}.ibd",
-    all = "results/rephased/{dataset}.chr{chrnum}.allanc.gapfilled.ibd",
-    anc = "results/rephased/{dataset}.chr{chrnum}.anc{anc}.gapfilled_ibd"
+    all = "results/rephased/{dataset}.chr{chrnum}.allancestry.gapfill.ibd",
   shell:
     """
     gunzip {input.phased}
     python scripts/filter_gapfilled_ibd_ancestry.py {output.unzip} {input.filled} {input.refine} {N_ANC} > {output.all}
-    cat {output.all} | grep -i "[[:space:]]{wildcards.anc}"'$' | cut -f1-8 -d' ' > {output.anc}
     """
+
+rule fill_ancestry:
+  input:
+    "results/rephased/{dataset}.chr{chrnum}.allancestry.gapfill.ibd"
+  output:
+    "results/rephased/{dataset}.chr{chrnum}.anc{anc}.gapfill.ibd"
+  shell:
+    """
+    cat {input.all} | grep -i "[[:space:]]{wildcards.anc}"'$' | cut -f1-8 -d' ' > {output}
+    """
+
+
+python scripts/collapse_ancestry.py \
+    --rfmix results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.Viterbi.txt \
+    --snp_locations results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.snp_locations \
+    --fbk results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.ForwardBackward.txt \
+    --fbk_threshold 0.9 \
+    --ind SA3107  \
+    --ind_info results/RFMIX/ref_bal_CDB_merge_geno0.05.sample \
+    --pop_labels GBR,CHB,LWK,NAMA \
+    --out SA3107
+
+    python scripts/plot_karyogram.py \
+    --bed_a SA3107_A.bed \
+    --bed_b SA3107_B.bed \
+    --ind SA3107 \
+    --pop_order GBR,CHB,LWK,NAMA \
+    --out SA3107.png
+
+ python scripts/filter_gapfilled_ibd_ancestry.py results/IBD-segs/ref_bal_CDB_merge_geno0.05.chr22.ibd results/IBD-segs/ref_bal_CDB_merge_geno0.05.chr22.filled.ibd results/rephased/ref_bal_CDB_merge_geno0.05.chr22.rfmix.Viterbi.refinedibdphase 5 > results/rephased/ref_bal_CDB_merge_geno0.05.chr22.allancestry.gapfill.ibd

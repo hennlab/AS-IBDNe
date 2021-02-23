@@ -56,5 +56,49 @@ gmap: /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/
 ```
 source /share/hennlab/progs/miniconda3/etc/profile.d/conda.sh
 conda activate IBDne-env
-nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile cdb_nama_0.05.config.yaml -j 20 -n 
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile cdb_nama_0.05.config.yaml -j 20 --keep-going
 ```
+
+# need to go back and sort chr 13 in the genetic map file
+
+6. Plotting rfmix results - scripts from Gerald Van der Eeden
+
+1. Convert msp to bed format
+
+```
+Rscript scripts/msp_to_bed.R results/RFmix results/plots/bedfiles 10 GBR CHB LWK NAMA CDB
+```
+
+2. Use alicia martins karyogram script
+
+python scripts/plot_karyogram.py \
+--bed_a results/plots/bedfiles/cdb_nama_0.05SA3042.1.BED \
+--bed_b results/plots/bedfiles/cdb_nama_0.05SA3042.0.BED \
+--ind SA3042 \
+--pop_order GBR,CHB,LWK,NAMA \
+--out results/plots/SA3042.png
+
+cdb_nama_0.05SA3103.0.BED
+python scripts/plot_karyogram.py \
+--bed_a results/plots/bedfiles/cdb_nama_0.05SA3103.0.BED \
+--bed_b results/plots/bedfiles/cdb_nama_0.05SA3103.1.BED \
+--ind SA3103 \
+--pop_order GBR,CHB,LWK,NAMA \
+--out results/plots/SA3103.png
+
+
+python scripts/plot_karyogram.py \
+--bed_a results/plots/bedfiles/cdb_nama_0.05SA3159.0.BED \
+--bed_b results/plots/bedfiles/cdb_nama_0.05SA3159.1.BED \
+--ind SA3159 \
+--pop_order GBR,CHB,LWK,NAMA \
+--out results/plots/SA3159.png
+
+
+
+python scripts/plot_karyogram.py \
+--bed_a results/plots/bedfiles/cdb_nama_0.05SA3146.0.BED \
+--bed_b results/plots/bedfiles/cdb_nama_0.05SA3146.1.BED \
+--ind SA3146 \
+--pop_order GBR,CHB,LWK,NAMA \
+--out results/plots/SA3146.png

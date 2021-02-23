@@ -159,8 +159,10 @@ pops: data/cdb_merge_pops.txt
 Run snakemake
 
 ```bash
-nice -5 /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config_ref_CDB_merge.yaml -j 20
+/share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config_ref_CDB_merge.yaml -j 20
 ```
+
+/share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config_ref_CDB_merge.yaml -j 20 --rulegraph | dot -Tpng > rulegraph.png
 
 Check on karyograms
 ```
@@ -201,3 +203,49 @@ SA3060 SA3188 SA3164
 
 
 python scripts/RunRFMix.py -e 2 -w 0.2 --num-threads {threads} --use-reference-panels-in-EM --forward-backward PopPhased {input.all} {input.cl} {input.snp} -o {params}
+
+
+Trying to figure out why RFmix was rerun and what changed between the good runs and bad runs:
+
+cut -d" " -f2 balanced_ref_unrelated_smps.ref.keep > reference.samples.keep
+cut -d" " -f2 cdb_admix.keep > admix.samples.keep
+python ../scripts/shapeit2rfmix.py --shapeit_hap_ref ref_bal_CDB_merge_geno0.05.chr10.phased.haps --shapeit_hap_admixed ref_bal_CDB_merge_geno0.05.chr10.phased.haps --shapeit_sample_ref ref_bal_CDB_merge_geno0.05.chr10.phased.sample --shapeit_sample_admixed ref_bal_CDB_merge_geno0.05.chr10.phased.sample --ref_keep reference.samples.keep  --admixed_keep admix.samples.keep --chr 10 --genetic_map /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/chr10.gmap.txt --out script_out
+
+
+Looks like the list of ref pops included CDB
+problem run fix classes rule inputs (less 2021-01-19T160309.758281.snakemake.log) : results/RFMIX/ref_bal_CDB_merge_geno0.05.GBR.keep, results/RFMIX/ref_bal_CDB_merge_geno0.05.CHB.keep, results/RFMIX/ref_bal_CDB_merge_geno0.05.LWK.keep, results/RFMIX/ref_bal_CDB_merge_geno0.05.NAMA.keep, results/RFMIX/ref_bal_CDB_merge_geno0.05.
+CDB.keep, results/RFMIX/ref_bal_CDB_merge_geno0.05.sample
+
+fix classes rule inputs for the run that worked: results/RFMIX/nama_tgp_qc_pops.GBR.keep, results/RFMIX/nama_tgp_qc_pops.CHB.keep, results/RFMIX/nama_tgp_qc_pops.LWK.keep, results/RFMIX/nama_tgp_qc_pops.NAMA.keep, results/RFMIX/nama_tgp_qc_pops.sample
+
+python ../scripts/classes.py --ref ref_bal_CDB_merge_geno0.05.GBR.keep,ref_bal_CDB_merge_geno0.05.CHB.keep,ref_bal_CDB_merge_geno0.05.LWK.keep,ref_bal_CDB_merge_geno0.05.NAMA.keep --sample ref_bal_CDB_merge_geno0.05.sample --out new_fix.classes
+
+
+When the good version of rfmix was run, it used this file results/RFMIX/new.classes , which looks like
+```
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 0 0 0 0 0 0 4 4 4 4 4 4 0 0 0 0 0 0 4 4 4 4 0 0 0 0 4 4 0 0 4 4 0 0 4 4 0 0 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 0 0 4 4 4 4 4 4 0 0 0 0 0 0 4 4 4 4 0 0 0 0 4 4 4 4 4 4 0 0 4 4 0 0 4 4 4 4 4 4 4 4 4 4 0 0 0 0 0 0 0 0 0 0 0 0 4 4 0 0 0 0 4 4 0 0 4 4 4 4 0 0 0 0 0 0 4 4 0 0 0 0 0 0 4 4 0 0 4 4 0 0 0 0 0 0 0 0 0 0 4 4 4 4 4 4 4 4 4 4 4 4 0 0 0 0 0 0 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+```
+
+while the file output by the classes.py script looks like this
+```
+2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+```
+the old new.classes file was leftover from the previous run where  
+
+python ../scripts/classes.py --ref ref_bal_CDB_merge_geno0.05.GBR.keep,ref_bal_CDB_merge_geno0.05.CHB.keep,ref_bal_CDB_merge_geno0.05.LWK.keep,ref_bal_CDB_merge_geno0.05.NAMA.keep --sample new_tail.sample --out new_tail_fix.classes
+
+
+Testing running rfmix on dataset with classes file size 2
+
+rule run_rfmix:
+    input: results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.alleles, results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.snp_locations, results/RFMIX/new.classes
+    output: results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.0.ForwardBackward.txt, results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.1.ForwardBackward.txt, results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.ForwardBackward.txt, results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.0.Viterbi.txt, results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.1.Viterbi.txt, results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.Viterbi.txt, results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.allelesRephased0.txt, results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.allelesRephased1.txt, results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.allelesRephased2.txt
+    jobid: 1
+    wildcards: dataset=ref_bal_CDB_merge_geno0.05, chrnum=1
+    threads: 10
+
+running in snakemake screen
+
+python RunRFMix.py -e 2 -w 0.2 --num-threads 20 --use-reference-panels-in-EM --forward-backward PopPhased results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.alleles debugging/small.classes results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.snp_locations -o debugging/small_classes_file_test
+
+Also, run admixture plot for our data with K =4
