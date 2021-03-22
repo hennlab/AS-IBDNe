@@ -78,32 +78,6 @@ rule trim_phase:
     bash scripts/shapeit_iterate.sh {params.in_pre} {params.inputmap} {params.log_pre} {params.out_pre} {REF}_chr{wildcards.chrnum}.hap.gz {REF}_chr{wildcards.chrnum}.legend.gz {REF}.sample {threads}
     """
 
-rule make_vcf:
-  input:
-    multiext("results/phasing/{dataset}.chr{chrnum}.phased", ".haps", ".sample")
-  output:
-    vcf = "results/phasing/{dataset}.chr{chrnum}.phased.vcf",
-    log = "shapeit_log/{dataset}_{chrnum}.vcf.log"
-  params:
-    in_pre="results/phasing/{dataset}.chr{chrnum}.phased",
-  shell:
-    """
-    shapeit -convert --input-haps {params.in_pre} --output-vcf {output.vcf} --output-log {output.log}
-    """
-
-rule convert_germline:
-  input:
-    multiext("results/phasing/{dataset}.chr{chrnum}.phased", ".haps", ".sample")
-  output:
-    multiext("results/phasing/{dataset}.chr{chrnum}.phased", ".ped", ".map")
-  params:
-    prefix = "results/phasing/{dataset}.chr{chrnum}.phased",
-    map = GMAP+"chr{chrnum}.gmap.txt"
-  shell:
-    """
-    python scripts/shapeit_to_germline.py {params.prefix} {params.map}
-    """
-
 rule refined_ibd:
   input:
     vcf = "results/phasing/{dataset}.chr{chrnum}.phased.vcf",
@@ -135,7 +109,8 @@ rule rfmix_input:
     haps = "results/phasing/{dataset}.chr{chrnum}.phased.haps",
     sample = "results/phasing/{dataset}.chr{chrnum}.phased.sample"
   output:
-    multiext("results/RFMIX/{dataset}_chr{chrnum}", ".alleles", ".snp_locations", ".map")
+    multiext("results/RFMIX/{dataset}_chr{chrnum}", ".alleles", ".snp_locations", ".map"),
+    "results/RFMIX/{dataset}.chr{chrnum}.sample"
   params:
     map = GMAP+"chr{chrnum}.gmap.txt",
     out = "results/RFMIX/{dataset}"
@@ -159,12 +134,12 @@ rule parse_pops:
 rule fix_classes:
   input:
     pop = generate_pop_input,
-    samp = "results/RFMIX/{dataset}.sample"
+    smp = "results/RFMIX/{dataset}.chr1.sample"
   output:
     "results/RFMIX/{dataset}.fix.classes"
   shell:
     """
-    python scripts/classes.py --ref {POP_INPUT_LIST} --sample {input.samp} --out {output}
+    python scripts/classes.py --ref {POP_INPUT_LIST} --sample {input.smp} --out {output}
     """
 
 rule run_rfmix:
@@ -210,4 +185,4 @@ rule run_rfmix:
 
 
 
-\It is created using alicia’s classes.py script, the pop.keep files in that directory ref_bal_CDB_merge_geno0.05.{pop}.keep and the sample file ref_bal_CDB_merge_geno0.05.sample . The sample file was created by alicias script shapeit2rfmix.py based on the new order of samples in the alleles file, which she says in her documentation is different order than the sample and haps 
+\It is created using alicia’s classes.py script, the pop.keep files in that directory ref_bal_CDB_merge_geno0.05.{pop}.keep and the sample file ref_bal_CDB_merge_geno0.05.sample . The sample file was created by alicias script shapeit2rfmix.py based on the new order of samples in the alleles file, which she says in her documentation is different order than the sample and haps

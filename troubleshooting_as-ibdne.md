@@ -160,6 +160,8 @@ Run snakemake
 
 ```bash
 /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config_ref_CDB_merge.yaml -j 20
+
+
 ```
 
 /share/hennlab/progs/miniconda3/bin/snakemake --configfile config/config_ref_CDB_merge.yaml -j 20 --rulegraph | dot -Tpng > rulegraph.png
@@ -249,3 +251,308 @@ running in snakemake screen
 python RunRFMix.py -e 2 -w 0.2 --num-threads 20 --use-reference-panels-in-EM --forward-backward PopPhased results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.alleles debugging/small.classes results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.snp_locations -o debugging/small_classes_file_test
 
 Also, run admixture plot for our data with K =4
+
+
+## March 4th 2021
+
+Troubleshooting the all purple- Nama results
+
+Pulling out the Nama, and phasing with 1000 genomes to see if it has similar misaligned snps
+
+```
+cd /share/hennlab/projects/IBDNe/as-ibdne/dataset
+# pulling out the NAMA reference individual IDs
+grep "NAMA" balanced_ref_unrelated_smps.ref.keep > NAMA_ref_inds.txt
+# Creating Nama only reference dataset
+plink --bfile ref_bal_CDB_merge_geno0.05 --keep NAMA_ref_inds.txt --make-bed --out NAMA_ref_only
+
+# Phasing with shapeit
+/share/hennlab/projects/IBDNe/as-ibdne/debugging
+
+for chr in `seq 1 22` ; do plink --bfile ../dataset/NAMA_ref_only --chr $chr --make-bed --out NAMA_ref_only_chr${chr}; done
+
+for chr in `seq 1 22`; do shapeit -B NAMA_ref_only_chr${chr} -M /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/chr${chr}.gmap.txt --input-ref /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3_chr${chr}.hap.gz /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3_chr${chr}.legend.gz /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3.sample --duohmm -W 5 -O NAMA_ref_only_phased_chr${chr} --output-log NAMA_ref_only_phased_chr${chr} -T 10; done
+```
+
+It ran fine on the Nama.
+
+
+#### Throwing out 9k SNPs from the combined dataset and rerunning
+
+- remove these snps from the admixed dataset, then combine with the reference dataset and rephase.
+
+Script:
+```
+INPUT=$1
+MAP=$2
+LOG=$3
+OUTPUT=$4
+REF_HAP=$5
+REF_LEG=$6
+REF_SAMP=$7
+THREADS=$8
+
+shapeit -B ${INPUT} -M ${MAP} --input-ref ${REF_HAP} ${REF_LEG} ${REF_SAMP} --duohmm -W 5 -O ${OUTPUT} --output-log ${LOG}.log -T ${THREADS}
+
+grep Missing ${LOG}.snp.strand | cut -f4 > ${INPUT}_missing_from_ref.txt
+grep Strand ${LOG}.snp.strand | awk '$11==1 {print $4}' > ${INPUT}_flip_in_dataset.txt
+grep Strand ${LOG}.snp.strand | awk '$11==0 {print $4}' > ${INPUT}_cannot_flip_in_dataset.txt
+
+cat ${INPUT}_missing_from_ref.txt ${INPUT}_flip_in_dataset.txt ${INPUT}_cannot_flip_in_dataset.txt > ${INPUT}_remove_from_dataset.txt
+plink --bfile ${INPUT} --exclude ${INPUT}_remove_from_dataset.txt --make-bed --out ${INPUT}_misalign_removed
+
+plink --bfile ${INPUT}_misalign_removed --bmerge /share/hennlab/projects/IBDNe/as-ibdne/version_2.3/data/cdb_nama_0.05.ref.bed /share/hennlab/projects/IBDNe/as-ibdne/version_2.3/data/cdb_nama_0.05.ref.bim /share/hennlab/projects/IBDNe/as-ibdne/version_2.3/data/cdb_nama_0.05.ref.fam --make-bed --out /share/hennlab/projects/IBDNe/as-ibdne/remove_9k_snps/cdb_ref_merge_snpremove
+```
+
+Running the script in /share/hennlab/projects/IBDNe/as-ibdne/remove_9k_snps to remove snps then recombine.
+```
+for chr in `seq 1 22` ; do nice scripts/shapeit_iterate.sh results/phasing/cdb_nama_0.05.admix.chr${chr} /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/ shapeit_log/cdb_nama_0.05.admix_chr${chr}.phased results/phasing/cdb_nama_0.05.admix.chr${chr}.phased /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3_chr${chr}.hap.gz /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3_chr${chr}.legend.gz /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3.sample 35 ; done
+```
+
+
+```
+plink --bfile cdb_ref_merge_snpremove --geno 0.05 --mind 0.1 --make-bed --out cdb_ref_merge_snpremove_qc
+
+Logging to cdb_ref_merge_snpremove_qc.log.
+Options in effect:
+  --bfile cdb_ref_merge_snpremove
+  --geno 0.05
+  --make-bed
+  --mind 0.1
+  --out cdb_ref_merge_snpremove_qc
+
+257931 MB RAM detected; reserving 128965 MB for main workspace.
+1738916 variants loaded from .bim file.
+726 people (12 males, 14 females, 700 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to cdb_ref_merge_snpremove_qc.nosex .
+424 people removed due to missing genotype data (--mind).
+IDs written to cdb_ref_merge_snpremove_qc.irem .
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 302 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate in remaining samples is 0.990008.
+17004 variants removed due to missing genotype data (--geno).
+1721912 variants and 302 people pass filters and QC.
+Note: No phenotypes present.
+--make-bed to cdb_ref_merge_snpremove_qc.bed + cdb_ref_merge_snpremove_qc.bim +
+cdb_ref_merge_snpremove_qc.fam ... done.
+
+removed all of the cederberg samples.
+```
+rerun the simple test on this dataset
+```
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile cdb_ref_merge_snpremove.yaml -j 20 -n
+```
+remove snps
+```
+miramastoras@augrabies:/share/hennlab/projects/IBDNe/as-ibdne/remove_9k_snps/results/phasing$ wc -l *remove_from_dataset.txt
+   6004 cdb_nama_0.05.admix.chr10_remove_from_dataset.txt
+   6315 cdb_nama_0.05.admix.chr11_remove_from_dataset.txt
+   6141 cdb_nama_0.05.admix.chr12_remove_from_dataset.txt
+   3809 cdb_nama_0.05.admix.chr13_remove_from_dataset.txt
+   3861 cdb_nama_0.05.admix.chr14_remove_from_dataset.txt
+   3912 cdb_nama_0.05.admix.chr15_remove_from_dataset.txt
+   4261 cdb_nama_0.05.admix.chr16_remove_from_dataset.txt
+   4035 cdb_nama_0.05.admix.chr17_remove_from_dataset.txt
+   3057 cdb_nama_0.05.admix.chr18_remove_from_dataset.txt
+   3716 cdb_nama_0.05.admix.chr19_remove_from_dataset.txt
+   9649 cdb_nama_0.05.admix.chr1_remove_from_dataset.txt
+   2463 cdb_nama_0.05.admix.chr20_remove_from_dataset.txt
+   1569 cdb_nama_0.05.admix.chr21_remove_from_dataset.txt
+   1730 cdb_nama_0.05.admix.chr22_remove_from_dataset.txt
+   9741 cdb_nama_0.05.admix.chr2_remove_from_dataset.txt
+   9007 cdb_nama_0.05.admix.chr3_remove_from_dataset.txt
+   8480 cdb_nama_0.05.admix.chr4_remove_from_dataset.txt
+   7603 cdb_nama_0.05.admix.chr5_remove_from_dataset.txt
+   9171 cdb_nama_0.05.admix.chr6_remove_from_dataset.txt
+   7444 cdb_nama_0.05.admix.chr7_remove_from_dataset.txt
+   6194 cdb_nama_0.05.admix.chr8_remove_from_dataset.txt
+   5420 cdb_nama_0.05.admix.chr9_remove_from_dataset.txt
+ 123582 total
+```
+
+### Pulling out original 1000 genomes individuals and recombining with the NAma
+
+/share/genomes/1000genomes/phase3
+
+```
+for chr in `seq 1 22`; do plink --vcf /share/genomes/1000genomes/phase3/ALL.chr${chr}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz --chr ${chr} --keep balanced_ref_unrelated_smps.txt --out 1kg_chr${chr} ; done
+```
+
+combine chromosomes
+```
+plink --bfile 1kg_chr1 --merge-list merge_chroms.txt --make-bed --out 1kg_all # tri-allelic errors
+for chr in `seq 1 22` ; do plink --bfile 1kg_chr${chr} --exclude 1kg_all-merge.missnp --make-bed --out 1kg_chr${chr}_ex ; done
+plink --bfile 1kg_chr1_ex --merge-list merge_chroms_ex.txt --make-bed --out 1kg_all # tri-allelic errors
+```
+
+merge with admixed samples
+```
+plink --bfile 1kg_all --bmerge /share/hennlab/projects/IBDNe/as-ibdne/version_2.3/data/cdb_nama_0.05.admix.bed /share/hennlab/projects/IBDNe/as-ibdne/version_2.3/data/cdb_nama_0.05.admix.bim /share/hennlab/projects/IBDNe/as-ibdne/version_2.3/data/cdb_nama_0.05.admix.fam --make-bed --out 1kg_recombine
+```
+
+Need to flip again
+```
+plink --bfile 1kg_all --exclude 1kg_recombine-merge.missnp --make-bed --out 1kg_all_ex
+plink --bfile /share/hennlab/projects/IBDNe/as-ibdne/version_2.3/data/cdb_nama_0.05.admix --exclude 1kg_recombine-merge.missnp --make-bed --out cdb_nama_0.05.admix_ex
+plink --bfile 1kg_all_ex --bmerge cdb_nama_0.05.admix_ex.bed cdb_nama_0.05.admix_ex.bim cdb_nama_0.05.admix_ex.fam --make-bed --out 1kg_recombine
+```
+
+```
+plink --bfile 1kg_recombine --geno 0.05 --mind 0.1 --make-bed --out 1kg_recombine_qc
+```
+
+Running snakemake on it
+```
+cd /share/hennlab/projects/IBDNe/as-ibdne/simple_2.3_test
+source /share/hennlab/progs/miniconda3/etc/profile.d/conda.sh
+conda activate IBDne-env
+module load bcftools
+module load samtools
+module load htslib
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile 1kg_recombine.yaml -j 20 -n --until phase --keep-going
+
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile 1kg_recombine.yaml -j 20 -n
+```
+
+```
+plink --bfile 1kg_recombine_qc --list-duplicate-vars ids-only --out 1kg_duplicates.txt
+plink --bfile 1kg_recombine_qc --exclude 1kg_duplicates.txt.dupvar --make-bed --out 1kg_recombine_qc_nodups
+```
+
+Same shape it error with misaligned snps: rerun shapeit on full dataset and remove them, then rerun in pipeline
+
+```
+for chr in `seq 1 22`
+do
+grep Missing ../../shapeit_log/1kg_recombine_qc_nodups_chr${chr}.phased.snp.strand | cut -f4 > 1kg_recombine_qc_nodups_chr${chr}_missing_from_ref.txt
+grep Strand ../../shapeit_log/1kg_recombine_qc_nodups_chr${chr}.snp.strand | awk '$11==1 {print $4}' > 1kg_recombine_qc_nodups_chr${chr}_flip_in_dataset.txt
+grep Strand ../../shapeit_log/1kg_recombine_qc_nodups_chr${chr}.snp.strand | awk '$11==0 {print $4}' > 1kg_recombine_qc_nodups_chr${chr}_cannot_flip_in_dataset.txt
+
+cat 1kg_recombine_qc_nodups_chr${chr}_missing_from_ref.txt 1kg_recombine_qc_nodups_chr${chr}_flip_in_dataset.txt 1kg_recombine_qc_nodups_chr${chr}_cannot_flip_in_dataset.txt > 1kg_recombine_qc_nodups_chr${chr}_remove_from_dataset.txt
+plink --bfile 1kg_recombine_qc_nodups.chr${chr} --exclude 1kg_recombine_qc_nodups_chr${chr}_remove_from_dataset.txt --make-bed --out 1kg_recombine_qc_nodups.chr${chr}_misalign_removed
+done
+
+for chr in `seq 2 22`; do echo 1kg_recombine_qc_nodups.chr${chr}_misalign_removed.bed 1kg_recombine_qc_nodups.chr${chr}_misalign_removed.bim 1kg_recombine_qc_nodups.chr${chr}_misalign_removed.fam >>  1kg_recombine_merge_chroms.txt
+plink --bfile 1kg_recombine_qc_nodups.chr1_misalign_removed --merge-list 1kg_recombine_merge_chroms.txt --make-bed --out ../../data/1kg_recombine_qc_nodups_misrem
+
+
+plink --bfile data/1kg_recombine_qc_nodups_misrem --list-duplicate-vars ids-only --out 1kg_misrem_duplicates.txt
+plink --bfile data/1kg_recombine_qc_nodups_misrem --exclude 1kg_misrem_duplicates.txt --make-bed --out data/1kg_recombine_qc_nodups2_misrem
+```
+
+Running
+### American samples in parallel
+
+Location:
+```
+/share/hennlab/data/snp-array/MEGA_1000G
+```
+
+pull out list of individuals `american_popinfo.txt`
+```
+plink --bfile TGP_phase3_chrAll_mergeReady --keep /share/hennlab/projects/IBDNe/as-ibdne/americans/american.keep --make-bed --out /share/hennlab/projects/IBDNe/as-ibdne/americans/americans
+```
+
+update population ids
+```
+awk '{print $2"\t"$2"\t"$1"\t"$2}' american_popinfo.txt > update_ids_americans
+plink --bfile americans --update-ids update_ids_americans --make-bed --out americans_pops
+```
+
+pull out these four pops and run a quick admixture k =3 or k =4  
+
+![american admixture](americans_admixture.png)
+
+
+20-25 PEL individuals will have 95% american or more: pull out these and get the same number of individuals from YRI and CEU to use as reference
+
+- in Q file col 1 is CEU, col 2 is YRI and Col 3 is the native american
+
+```
+paste -d "\t" americans.3.Q ind2pop.txt > americans_3_Q.txt
+grep "PEL" americans_3_Q.txt | awk '$3 >= 0.95' > PEL_refs
+wc -l PEL_refs # 26 individuals
+
+grep "CEU" americans_3_Q.txt | head -n 26 > CEU_refs
+grep "YRI" americans_3_Q.txt | head -n 26 > YRI_refs
+
+grep "MXL" americans_3_Q.txt | head -n 60 > MXL_admixed # removed ones with 95% or greater ancestry of one pop, left with 54
+sed -e 's/ /\t/g' MXL_admixed | cut -f5 > MXL_admix_IDs
+
+sed -i -e 's/ /\t/g' CEU_refs
+sed -i -e 's/ /\t/g' YRI_refs
+sed -i -e 's/ /\t/g' PEL_refs
+sed -i -e 's/ /\t/g' MXL_admixed
+```
+
+
+Extract all reference and admixed samples from americans dataset
+
+```
+plink --bfile data/all_americans/americans_pops --keep americans_subset_IDs.txt --make-bed --out data/americans_subset
+```
+
+Running simple shapeit snakefile on the americans to test out rfmix
+
+```
+cd /share/hennlab/projects/IBDNe/as-ibdne/americans
+source /share/hennlab/progs/miniconda3/etc/profile.d/conda.sh
+conda activate IBDne-env
+module load bcftools
+module load samtools
+module load htslib
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile americans_subset_simple.yaml -j 35 -n
+```
+
+Plotting the karyoplots
+
+Rscript msp_to_bed.R results/RFmix/msp_files results/plots/bedfiles/ 20 CEU PEL YRI
+
+python plot_karyogram.py \
+--bed_a results/plots/bedfiles/NA19649.0.BED \
+--bed_b results/plots/bedfiles/NA19649.1.BED \
+--ind NA19649 \
+--pop_order CEU PEL YRI \
+--out results/plots/NA19649.png
+
+python plot_karyogram.py \
+--bed_a results/plots/bedfiles/NA19682.0.BED \
+--bed_b results/plots/bedfiles/NA19682.1.BED \
+--ind NA19682 \
+--pop_order CEU,PEL,YRI \
+--out results/plots/NA19682.png
+
+NA19770
+python plot_karyogram.py \
+--bed_a results/plots/bedfiles/NA19770.0.BED \
+--bed_b results/plots/bedfiles/NA19770.1.BED \
+--ind NA19770 \
+--pop_order CEU,PEL,YRI \
+--out results/plots/NA19770.png
+
+Running americans on version 1.5
+
+```
+gmap: /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/
+
+dataset: americans_subset_remove
+
+ref: /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3
+
+ids_ref: data/american_reference_IDs.txt
+
+ids_admix: data/americans_admixed_IDs.txt
+
+pops: americans_ref_popfile.txt
+```
+
+```
+/share/hennlab/projects/IBDNe/as-ibdne/version_1.7_test
+source /share/hennlab/progs/miniconda3/etc/profile.d/conda.sh
+conda activate IBDne-env
+module load bcftools
+module load samtools
+module load htslib
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile americans.yaml -j 5 -n
+```

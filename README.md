@@ -130,11 +130,11 @@ Deciphering the output files of three different versions:
 RFMIX 1.5.4:
 - ForwardBackward.txt
     - one row per SNP and one column per ancestry.
-    - Value in each column is posteriorprobability of that ancestryt that SP n that haplotype.
+    - Value in each column is posteriorprobability of that ancestryt that SPn that haplotype.
 - Viterbi.txt
-    - One rowper SNP and one columner amixed alotype
+    - One rowper SNP and one columner amixedalotype
 - allelesRephased0.txt
-    - one rowper SNP and one column peraplotype. Values are 0or1, wher each SNP has ad t allesconverte to binry frmat
+    - one rowper SNP and one column peraplotype. Values are 0or1, wher each SNP hasad tllesconverte to bnry frmat
 
 RFMMIX 1.7:
 - fb-probs.tsv
@@ -150,3 +150,60 @@ RFMix2.0:
     - rows corresponding to genomic position and columns corresponding to haplotypes
     - haplotypes are tab delimited, but the array of probabilities for each haplotype at each window (row) is a set of space delimited columns within each tab delimited haplotype   column
 - rfmix.Q: Global diploid ancestry estimates
+
+
+
+
+Plotting output from 1.7 test:
+
+python scripts/collapse_ancestry.py \
+--rfmix results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.viterbi-msp.tsv \
+--snp_locations results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.snp_locations \
+--fbk results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.fb-probs.tsv \
+--fbk_threshold 0.9 \
+--ind SA3097 \
+--ind_info results/RFMIX/ref_bal_CDB_merge_geno0.05.sample \
+--pop_labels CHB,GBR,LWK,NAMA \
+--out SA3097
+
+python scripts/plot_karyogram.py \
+--bed_a SA3097_A.bed \
+--bed_b SA3097_B.bed \
+--ind SA3097 \
+--pop_order CHB,GBR,LWK,NAMA \
+--out SA3097.png
+
+
+python scripts/collapse_ancestry.py \
+--rfmix results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.viterbi-msp.tsv \
+--snp_locations results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.snp_locations \
+--fbk results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.fb-probs.tsv \
+--fbk_threshold 0.9 \
+--ind SA3154 \
+--ind_info results/RFMIX/ref_bal_CDB_merge_geno0.05.sample \
+--pop_labels CHB,GBR,LWK,NAMA \
+--out SA3154
+
+python scripts/plot_karyogram.py \
+--bed_a SA3154_A.bed \
+--bed_b SA3154_B.bed \
+--ind SA3154 \
+--pop_order CHB,GBR,LWK,NAMA \
+--out SA3154.png
+
+python scripts/collapse_ancestry.py \
+--rfmix results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.viterbi-msp.tsv \
+--snp_locations results/RFMIX/ref_bal_CDB_merge_geno0.05_chr1.snp_locations \
+--fbk results/RFMIX/ref_bal_CDB_merge_geno0.05.chr1.rfmix.2.fb-probs.tsv \
+--fbk_threshold 0.9 \
+--ind SA3188 \
+--ind_info results/RFMIX/ref_bal_CDB_merge_geno0.05.sample \
+--pop_labels CHB,GBR,LWK,NAMA \
+--out SA3188
+
+python scripts/plot_karyogram.py \
+--bed_a SA3188_A.bed \
+--bed_b SA3188_B.bed \
+--ind SA3188 \
+--pop_order CHB,GBR,LWK,NAMA \
+--out SA3188.png
