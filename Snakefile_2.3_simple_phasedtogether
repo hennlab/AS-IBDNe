@@ -11,12 +11,12 @@ import os
 # -------
 
 DATASET = config['dataset']
-GENMAP = config['genmap'] # The genetic map file should contain the map for the entire genome (all chromosomes).
-GMAP = config['gmap'] # path to genetic map files for each chromosome
+GENMAP = config['rfmix_genmap'] # The genetic map file should contain the map for the entire genome (all chromosomes).
+GMAP = config['chr_gmap'] # path to genetic map files for each chromosome
 SMPMAP = config['smpmap']
 ADMIX = config['admix_samples']
 REF=config['ref'] # path to reference haps/sample/legend files, including prefix.
-
+NANC=config['nanc']
 CHR = [i for i in range(1,23)]
 
 # ---------
@@ -27,7 +27,7 @@ rule all:
   input:
     expand("results/RFmix/{dataset}.chr{chrnum}.msp.tsv", dataset = DATASET, chrnum = CHR),
     expand("results/RFmix/{dataset}.chr{chrnum}.fb.tsv", dataset = DATASET, chrnum = CHR),
-    expand("results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.ibd",dataset = DATASET, chrnum = CHR )
+    expand("results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.allanc.ibd",dataset = DATASET, chrnum = CHR )
 
 # ---------
 #  Phasing
@@ -155,24 +155,35 @@ rule fill_gaps:
 
 rule convert_msp:
   input:
-    "results/RFmix/{dataset}.chr{chrnum}.msp.tsv"
+    msp = "results/RFmix/{dataset}.chr{chrnum}.msp.tsv",
+    bim = "results/phasing/{dataset}.chr{chrnum}.bim"
   output:
-    "results/RFmix/{dataset}.chr{chrnum}.msp.convert1.5.tsv"
+    "results/RFmix/{dataset}.chr{chrnum}.vit.tsv"
   shell:
     """
-    sed -e '1,2d' {input} | cut -f7- > {output}
+    grep '#' {input.msp} | tail -n 1 | cut -f7- | tr '\\t' '\\n' | cut -f1 -d'.' | tr '\\n' '\\t' | sed 's/^/POS /' > results/RFmix/vit_header
+    python scripts/msp_to_vit.py {input.msp} {input.bim} {output} results/RFmix/vit_header
+    cat results/RFmix/new_vit_header {output} > newvit ; mv newvit {output}
+    cut -f4 {input.bim} > results/RFmix/bim_positions ; paste -d' ' results/RFmix/bim_positions {output} > newfile ; mv newfile output
     """
 
 rule add_ancestry:
   input:
     ibd = "results/IBD-segs/{dataset}.chr{chrnum}.phased.ibd.gz",
     filled_ibd = "results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.ibd",
-    vit = "results/RFmix/{dataset}.chr{chrnum}.msp.convert1.5.tsv"
+    vit = "results/RFmix/{dataset}.chr{chrnum}.vit.tsv"
   output:
+    "results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.allanc.ibd"
   shell:
     """
-    python3 scripts/filter_gapfilled_ibd_ancestry.py {input.ibd} {input.filled_ibd} {input.vit} nancestries
+    python scripts/filter_gapfilled_ibd_ancestry.py {input.ibd} {input.filled_ibd} {input.vit} {NANC} > {output}
     """
+
+
+python scripts/filter_gapfilled_ibd_ancestry.py results/IBD-segs/americans_subset_remove.chr21.phased.ibd.gz results/IBD-segs/americans_subset_remove.chr21.phased.filled.ibd results/RFmix/chr21_new_vit.tsv.nodots 3 > fillancestryibdtest
+
+
+    python scripts/rephasevit.py results/phasing/ref_bal_CDB_merge_geno0.05.chr7.phased.vcf data/admix.samples.keep results/RFMIX/ref_bal_CDB_merge_geno0.05.chr7.rfmix.allelesRephased0.txt  results/RFMIX/ref_bal_CDB_merge_geno0.05.chr7.rfmix.0.Viterbi.txt > Viterbi_refinedibdphase
 
 rule combine_ibd:
   shell:
@@ -186,6 +197,9 @@ rule calc_haps:
     cat results/chrom[1-9]_rfmix_Viterbi_refinedibdphase results/chrom[1-3][0-9]_rfmix_Viterbi_refinedibdphase | java -jar filtercolumns.jar 1 results/admids | python adjust_npairs.py $anc > results/anc${anc}_npairs
     """
 
+
+
+shapeit -B results/phasing/1kg_recombine_qc_nodups.chr1 -M /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/chr1.gmap.txt --input-ref /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3_chr1.hap.gz /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3_chr1.legend.gz /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3.sample --duohmm -W 5 -O shapeit_test --output-log shapeit_log -T 10
 
 # --------
 #  IBDne
