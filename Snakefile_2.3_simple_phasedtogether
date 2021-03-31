@@ -38,7 +38,7 @@ rule all:
     expand("results/RFmix/{dataset}.chr{chrnum}.msp.tsv", dataset = DATASET, chrnum = CHR),
     expand("results/RFmix/{dataset}.chr{chrnum}.fb.tsv", dataset = DATASET, chrnum = CHR),
     expand("results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.allanc.ibd",dataset = DATASET, chrnum = CHR ),
-    expand("results/IBDne/{dataset}.anc{anc}_2cM.ibdne", dataset = DATASET, anc=anc_list)
+    expand("results/IBDne/{dataset}.anc{anc}_2cM.ibdne.ne", dataset = DATASET, anc=anc_list)
 
 # ---------
 #  Phasing
@@ -221,10 +221,24 @@ rule make_allchr_map:
   output:
     "results/phasing/{dataset}.allchr.phased.map"
   params:
-    "prepare/all_chroms/{dataset}.allchr.phased"
+    "results/phasing/{dataset}.allchr.phased"
   shell:
     """
     plink --vcf {input} --recode --out {params}
+    """
+
+rule add_cm:
+  input:
+    "results/phasing/{dataset}.allchr.phased.map"
+  output:
+    "results/phasing/{dataset}.allchr.phased.cm.map"
+  params:
+    gmap = GMAP+"chr@.gmap.txt",
+    in_pre = "results/phasing/{dataset}.allchr.phased",
+    out_pre = "results/phasing/{dataset}.allchr.phased.cm"
+  shell:
+    """
+    plink --file {params.in_pre} --cm-map {params.gmap} --recode --out {params.out_pre}
     """
 
 # --------
@@ -235,10 +249,12 @@ rule ibdne:
   input:
     ibd = "results/IBD-segs/{dataset}.phased.filled.anc{anc}.ibd",
     npairs = "results/IBDne/{dataset}.anc{anc}_npairs",
-    map = "results/phasing/{dataset}.allchr.phased.map"
+    map = "results/phasing/{dataset}.allchr.phased.cm.map"
   output:
+    "results/IBDne/{dataset}.anc{anc}_2cM.ibdne.ne"
+  params:
     "results/IBDne/{dataset}.anc{anc}_2cM.ibdne"
   shell:
     """
-    cat {input.ibd} | java -jar progs/ibdne.05May18.1c3.jar map={params} nthreads=12 mincm=2 npairs=`cat {input.npairs}` filtersamples=false out={output}
+    cat {input.ibd} | java -jar progs/ibdne.07May18.6a4.jar map={input.map} nthreads=12 mincm=2 npairs=`cat {input.npairs}` filtersamples=false out={output}
     """
