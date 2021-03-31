@@ -19,6 +19,16 @@ REF=config['ref'] # path to reference haps/sample/legend files, including prefix
 NANC=config['nanc']
 CHR = [i for i in range(1,23)]
 
+anc_list = [i for i in range(1,NANC+1)]
+
+def chrom_combine_inputs(wildcards):
+  files = expand("results/phasing/{dataset}.chr{chrnum}.phased.vcf", chrnum=CHR, dataset=DATASET)
+  return files
+
+def prep_ibdne_input(wildcards):
+  files = expand("results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.allanc.ibd", dataset=DATASET, chrnum=CHR)
+  return files
+
 # ---------
 #  Targets
 # ---------
@@ -27,7 +37,8 @@ rule all:
   input:
     expand("results/RFmix/{dataset}.chr{chrnum}.msp.tsv", dataset = DATASET, chrnum = CHR),
     expand("results/RFmix/{dataset}.chr{chrnum}.fb.tsv", dataset = DATASET, chrnum = CHR),
-    expand("results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.allanc.ibd",dataset = DATASET, chrnum = CHR )
+    expand("results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.allanc.ibd",dataset = DATASET, chrnum = CHR ),
+    expand("results/IBDne/{dataset}.anc{anc}_2cM.ibdne", dataset = DATASET, anc=anc_list)
 
 # ---------
 #  Phasing
@@ -158,20 +169,19 @@ rule convert_msp:
     msp = "results/RFmix/{dataset}.chr{chrnum}.msp.tsv",
     bim = "results/phasing/{dataset}.chr{chrnum}.bim"
   output:
-    "results/RFmix/{dataset}.chr{chrnum}.vit.tsv"
+    "results/RFmix/{dataset}.chr{chrnum}.vit.tsv",
+    "results/RFmix/{dataset}.chr{chrnum}.vit.tsv.fixed"
   shell:
     """
-    grep '#' {input.msp} | tail -n 1 | cut -f7- | tr '\\t' '\\n' | cut -f1 -d'.' | tr '\\n' '\\t' | sed 's/^/POS /' > results/RFmix/vit_header
-    python scripts/msp_to_vit.py {input.msp} {input.bim} {output} results/RFmix/vit_header
-    cat results/RFmix/new_vit_header {output} > newvit ; mv newvit {output}
-    cut -f4 {input.bim} > results/RFmix/bim_positions ; paste -d' ' results/RFmix/bim_positions {output} > newfile ; mv newfile output
+    python scripts/msp_to_vit.py {input.msp} {input.bim} {output}
+    bash reformat_vit.sh {input.msp} {input.bim} {output} {wildcards.chrnum}
     """
 
 rule add_ancestry:
   input:
     ibd = "results/IBD-segs/{dataset}.chr{chrnum}.phased.ibd.gz",
     filled_ibd = "results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.ibd",
-    vit = "results/RFmix/{dataset}.chr{chrnum}.vit.tsv"
+    vit = "results/RFmix/{dataset}.chr{chrnum}.vit.tsv.fixed"
   output:
     "results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.allanc.ibd"
   shell:
@@ -179,38 +189,56 @@ rule add_ancestry:
     python scripts/filter_gapfilled_ibd_ancestry.py {input.ibd} {input.filled_ibd} {input.vit} {NANC} > {output}
     """
 
-
-python scripts/filter_gapfilled_ibd_ancestry.py results/IBD-segs/americans_subset_remove.chr21.phased.ibd.gz results/IBD-segs/americans_subset_remove.chr21.phased.filled.ibd results/RFmix/chr21_new_vit.tsv.nodots 3 > fillancestryibdtest
-
-
-    python scripts/rephasevit.py results/phasing/ref_bal_CDB_merge_geno0.05.chr7.phased.vcf data/admix.samples.keep results/RFMIX/ref_bal_CDB_merge_geno0.05.chr7.rfmix.allelesRephased0.txt  results/RFMIX/ref_bal_CDB_merge_geno0.05.chr7.rfmix.0.Viterbi.txt > Viterbi_refinedibdphase
-
-rule combine_ibd:
+rule prep_ibdne:
+  input:
+    prep_ibdne_input
+  output:
+    "results/IBD-segs/{dataset}.phased.filled.anc{anc}.ibd",
+    "results/IBDne/{dataset}.anc{anc}_npairs"
   shell:
     """
-    cat results/chrom[1-9]_anc${anc}.gapfilled_ibd results/chrom[1-3][0-9]_anc${anc}.gapfilled_ibd > results/anc${anc}.gapfilled_ibd
+    bash scripts/sep_anc_comb_chr.sh {DATASET} {wildcards.anc} {ADMIX}
     """
 
-rule calc_haps:
+# ---------------------------
+#  Make map files for IBDne
+# ---------------------------
+
+rule combine_chrom:
+  input:
+    chrom_combine_inputs
+  output:
+    "results/phasing/{dataset}.allchr.phased.vcf"
   shell:
     """
-    cat results/chrom[1-9]_rfmix_Viterbi_refinedibdphase results/chrom[1-3][0-9]_rfmix_Viterbi_refinedibdphase | java -jar filtercolumns.jar 1 results/admids | python adjust_npairs.py $anc > results/anc${anc}_npairs
+    sed -n -e '/^#/ p' results/phasing/{wildcards.dataset}.chr1.phased.vcf > {output} #initialize allchr.vcf with headers
+    for i in {input}; do sed '/^#/d' $i >> {output} ; done
     """
 
-
-
-shapeit -B results/phasing/1kg_recombine_qc_nodups.chr1 -M /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/chr1.gmap.txt --input-ref /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3_chr1.hap.gz /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3_chr1.legend.gz /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3.sample --duohmm -W 5 -O shapeit_test --output-log shapeit_log -T 10
+rule make_allchr_map:
+  input:
+    "results/phasing/{dataset}.allchr.phased.vcf"
+  output:
+    "results/phasing/{dataset}.allchr.phased.map"
+  params:
+    "prepare/all_chroms/{dataset}.allchr.phased"
+  shell:
+    """
+    plink --vcf {input} --recode --out {params}
+    """
 
 # --------
 #  IBDne
 # --------
 
-
 rule ibdne:
+  input:
+    ibd = "results/IBD-segs/{dataset}.phased.filled.anc{anc}.ibd",
+    npairs = "results/IBDne/{dataset}.anc{anc}_npairs",
+    map = "results/phasing/{dataset}.allchr.phased.map"
+  output:
+    "results/IBDne/{dataset}.anc{anc}_2cM.ibdne"
   shell:
     """
-    cm=2
-for anc in 1 2 3; do
-  cat results/anc${anc}.gapfilled_ibd | java -jar ibdne.05May18.1c3.jar map=data/constrecomb.map nthreads=12 mincm=$cm npairs=`cat results/anc${anc}_npairs` filtersamples=false out=results/anc${anc}_${cm}cM.ibdne
-done
+    cat {input.ibd} | java -jar progs/ibdne.05May18.1c3.jar map={params} nthreads=12 mincm=2 npairs=`cat {input.npairs}` filtersamples=false out={output}
     """

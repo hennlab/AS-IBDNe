@@ -412,7 +412,7 @@ module load samtools
 module load htslib
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile 1kg_recombine.yaml -j 20 -n --until phase --keep-going
 
-nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile 1kg_recombine.yaml -j 20 -n
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile 1kg_recombine.yaml -j 20 -R trim_phase -n
 ```
 
 ```

@@ -1,3 +1,5 @@
+## Author: Shyamalika Gopalan
+
 INPUT=$1
 MAP=$2
 LOG=$3
