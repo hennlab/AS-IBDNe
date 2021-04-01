@@ -36,7 +36,9 @@ Please create a working directory to run the Snakefile in. The structure of the 
     |__ filter_gapfilled_ibd_ancestry.py*
     |__ reformat_vit.sh*
     |__ sep_anc_comb_chr.sh*
-    |__ scripts/adjust_npairs.py*
+    |__ adjust_npairs.py*
+    |__ plot_karyogram.R*
+    |__ plot_ibdne.R*
 |__ progs*
     |__ ibdne.05May18.1c3.jar*
     |__ filtercolumns.jar*
@@ -94,17 +96,20 @@ if the files are named as:
 ```bash
 # Dry run: always run first with -n flag to make sure the workflow will execute properly
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20 -n
+# Generate DAG
+/share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20 -n --rulegraph | dot -Tpng > rulegraph.png
+# Run pipeline
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20
 
-nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile americans_subset_simple.yaml -j 20 -R convert_msp -n
 ```
 
 ## 6. Plot karyograms after running RFMix
 
+The snakefile will automatically generate karograms for the first three individuals in your admixed data text file. If you want to generate these plots for other individuals manually, re-run the script in rule "plot_rfmix".
 
 ## 7. Acknowledgements and sources:
 
 - Rfmix version 2.3: https://github.com/slowkoni/rfmix/blob/master/MANUAL.md
 - Scripts for processing rfmix 1.5 output to IBDne input: https://faculty.washington.edu/sguy/asibdne/
 - IBDne: http://faculty.washington.edu/browning/ibdne.html
-- filtercolumns.jar https://faculty.washington.edu/browning/beagle_utilities/utilities.html 
+- filtercolumns.jar https://faculty.washington.edu/browning/beagle_utilities/utilities.html
