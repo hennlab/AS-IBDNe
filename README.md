@@ -50,7 +50,7 @@ The input dataset to this pipeline is a single bim/bed/fam fileset containing bo
 ## 3. QC beforehand
 ```bash
 plink --bfile nama_tgp --geno 0.05 --mind 0.1 --make-bed --out nama_tgp_qc
-# with populations in family ID column --> nama_tgp_qc_pops
+# add population label to bim file too
 ```
 
 ## 4. Config file
