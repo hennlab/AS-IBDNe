@@ -49,8 +49,9 @@ The input dataset to this pipeline is a single bim/bed/fam fileset containing bo
 
 ## 3. QC beforehand
 ```bash
+# Exact QC parameters up to the user
 plink --bfile nama_tgp --geno 0.05 --mind 0.1 --make-bed --out nama_tgp_qc
-# add population label to bim file too
+# Bim file must include population label in first column
 ```
 
 ## 4. Config file
