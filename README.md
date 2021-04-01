@@ -95,11 +95,17 @@ if the files are named as:
 ## 5. Run Snakemake
 
 ```bash
-# Dry run: always run first with -n flag to make sure the workflow will execute properly
+# 1. Activate conda environment
+source /share/hennlab/progs/miniconda3/etc/profile.d/conda.sh
+conda activate IBDne-env
+
+# 2. Dry run: always run first with -n flag to make sure the workflow will execute properly
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20 -n
-# Generate DAG
+
+# 2.1 Generate DAG (optional!)
 /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20 -n --rulegraph | dot -Tpng > rulegraph.png
-# Run pipeline
+
+# 3. Run pipeline
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20
 
 ```
