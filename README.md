@@ -39,6 +39,8 @@ Please create a working directory to run the Snakefile in. The structure of the 
     |__ adjust_npairs.py*
     |__ plot_karyogram.R*
     |__ plot_ibdne.R*
+    |__ shapeit_iterate.sh*
+    |__ trim_bimfile.R*
 |__ progs*
     |__ ibdne.05May18.1c3.jar*
     |__ filtercolumns.jar*
@@ -70,7 +72,7 @@ ref: /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000
 
 chr_gmap: /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/
 
-mincm: 2
+mincM: 2
 ```
 
 Explanation of config input parameters:

@@ -533,14 +533,31 @@ nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile americans_subset
 
 Plotting the karyoplots
 
-Rscript scripts/msp_to_bed.R results/RFmix/ results/plots/bedfiles/ 20 CHB GBR LWK
+Rscript msp_to_bed.R results/RFmix/1kg_recombine_restart_all_msp/ results/plots/bedfiles/ 20 CHB GBR LWK NAMA
+SA3183
+SA3194
+SA3203
+python plot_karyogram.py \
+--bed_a results/plots/bedfiles/SA3183.0.BED \
+--bed_b results/plots/bedfiles/SA3183.1.BED \
+--ind SA3183 \
+--pop_order CHB,GBR,LWK,NAMA \
+--out results/plots/SA3183.png
 
 python plot_karyogram.py \
---bed_a results/plots/bedfiles/SA3102.0.BED \
---bed_b results/plots/bedfiles/SA3102.1.BED \
---ind SA3102 \
---pop_order CHB,GBR,LWK \
---out results/plots/SA3102.png
+--bed_a results/plots/bedfiles/SA3194.0.BED \
+--bed_b results/plots/bedfiles/SA3194.1.BED \
+--ind SA3194 \
+--pop_order CHB,GBR,LWK,NAMA \
+--out results/plots/SA3194.png
+
+python plot_karyogram.py \
+--bed_a results/plots/bedfiles/SA3203.0.BED \
+--bed_b results/plots/bedfiles/SA3203.1.BED \
+--ind SA3203 \
+--pop_order CHB,GBR,LWK,NAMA \
+--out results/plots/SA3203.png
+
 
 python plot_karyogram.py \
 --bed_a results/plots/bedfiles/NA19682.0.BED \

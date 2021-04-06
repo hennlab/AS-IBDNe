@@ -7,7 +7,7 @@
 
 args = commandArgs(trailingOnly=TRUE)
 
-pops <- strsplit(args[4],",")
+pops = unlist(strsplit(args[4], split=","))
 nanc <- args[5]
 
 pdf(args[3],height=3,width=10)
@@ -16,6 +16,7 @@ for(anc in 1:nanc){
   filename=paste(args[1],anc,args[2],sep="")
   x=read.table(filename,header=T)
   col2="#00000080"
+  print(pops[anc])
   plot(x[,1],x[,1+anc],type="l",log="y",xlim=c(0,100),ylim=c(1e3,1e7),xlab="g (generations before present)",ylab="Ne (effective population size)",xaxs="i",yaxt="n",las=1,lwd=2.5,lty=32,col="lightgray",main=paste(pops[anc],"ancestry"))
   abline(h=c(1e2,1e3,1e4,1e5,1e6,1e7),v=seq(20,80,20),col="lightgray",lty="dotted")
   axis(2,at=c(1e3,1e4,1e5,1e6,1e7),labels=c(expression(10^3),expression(10^4),expression(10^5),expression(10^6),expression(10^7)),las=1)
