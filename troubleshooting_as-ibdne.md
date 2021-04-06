@@ -400,6 +400,11 @@ plink --bfile 1kg_all_ex --bmerge cdb_nama_0.05.admix_ex.bed cdb_nama_0.05.admix
 
 ```
 plink --bfile 1kg_recombine --geno 0.05 --mind 0.1 --make-bed --out 1kg_recombine_qc
+
+plink --bfile 1kg_recombine --geno 0.05 --mind 0.1 --make-bed --out 1kg_recombine_qc
+574 people (0 males, 0 females, 574 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to 1kg_recombine_qc.nosex .
+424 people removed due to missing genotype data (--mind).
 ```
 
 Running snakemake on it
@@ -439,6 +444,27 @@ plink --bfile 1kg_recombine_qc_nodups.chr1_misalign_removed --merge-list 1kg_rec
 
 plink --bfile data/1kg_recombine_qc_nodups_misrem --list-duplicate-vars ids-only --out 1kg_misrem_duplicates.txt
 plink --bfile data/1kg_recombine_qc_nodups_misrem --exclude 1kg_misrem_duplicates.txt --make-bed --out data/1kg_recombine_qc_nodups2_misrem
+```
+
+Starting over: running 1kg recombined without the mind flag
+
+# remove indels
+```
+grep ";" 1kg_recombine.bim | cut -f2 > indels
+plink --bfile 1kg_recombine --geno 0.05 --snps-only --exclude indels --make-bed --out 1kg_recombine_restart
+
+
+
+78793121 variants removed due to missing genotype data (--geno).
+535149 variants and 574 people pass filters and QC.
+
+
+# add in nama reference individuals to 1kg_recombine_restart
+plink --bfile /share/hennlab/projects/IBDNe/as-ibdne/version_1.5_runs/data/ref_CDB_merge_geno0.05 --keep nama_ref_only.txt --make-bed --out nama_ref_only
+
+plink --bfile nama_ref_only --bmerge 1kg_recombine_restart.bed 1kg_recombine_restart.bim 1kg_recombine_restart.fam --make-bed --out 1kg_recombine_restart_all
+
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile 1kg_recombine.yaml -j 20 -n
 ```
 
 Running
@@ -507,14 +533,14 @@ nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile americans_subset
 
 Plotting the karyoplots
 
-Rscript msp_to_bed.R results/RFmix/msp_files results/plots/bedfiles/ 20 CEU PEL YRI
+Rscript scripts/msp_to_bed.R results/RFmix/ results/plots/bedfiles/ 20 CHB GBR LWK
 
 python plot_karyogram.py \
---bed_a results/plots/bedfiles/NA19649.0.BED \
---bed_b results/plots/bedfiles/NA19649.1.BED \
---ind NA19649 \
---pop_order CEU PEL YRI \
---out results/plots/NA19649.png
+--bed_a results/plots/bedfiles/SA3102.0.BED \
+--bed_b results/plots/bedfiles/SA3102.1.BED \
+--ind SA3102 \
+--pop_order CHB,GBR,LWK \
+--out results/plots/SA3102.png
 
 python plot_karyogram.py \
 --bed_a results/plots/bedfiles/NA19682.0.BED \
@@ -556,3 +582,17 @@ module load samtools
 module load htslib
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile americans.yaml -j 5 -n
 ```
+
+americans_subset_remove.chr12.vit.tsv.fixed
+
+Figuring out why YRI and PEL are switched
+
+testing out converting to 1, 2, and 3
+python scripts/msp_to_vit.py results/RFmix/americans_subset_remove.chr12.msp.tsv results/phasing/americans_subset_remove.chr12.bim results/RFmix/chr12_test.vit.tsv
+bash scripts/reformat_vit.sh results/RFmix/americans_subset_remove.chr12.msp.tsv results/phasing/americans_subset_remove.chr12.bim results/RFmix/chr12_test.vit.tsv 12
+
+python scripts/filter_gapfilled_ibd_ancestry.py results/IBD-segs/americans_subset_remove.chr12.phased.ibd.gz results/IBD-segs/americans_subset_remove.chr12.phased.filled.ibd results/RFmix/chr12_test.vit.tsv.fixed 3 > chr12_filled.test
+
+
+
+nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile americans_subset_simple.yaml -j 20 -R convert_msp -n

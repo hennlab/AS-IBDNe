@@ -49,9 +49,8 @@ The input dataset to this pipeline is a single bim/bed/fam fileset containing bo
 
 ## 3. QC beforehand
 ```bash
-# Exact QC parameters up to the user
 plink --bfile nama_tgp --geno 0.05 --mind 0.1 --make-bed --out nama_tgp_qc
-# Bim file must include population label in first column
+# with populations in family ID column --> nama_tgp_qc_pops
 ```
 
 ## 4. Config file
@@ -71,12 +70,12 @@ ref: /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000
 
 chr_gmap: /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/
 
-nanc: 3
+mincm: 2
 ```
 
 Explanation of config input parameters:
 - **dataset**: Name of the dataset. needs to match prefix of input bim/bed/fam files : {dataset}.bed /.bim /.fam
-- **rfmix_genmap**: /share/hennlab/reference/recombination_maps/rfmix_combined_b37.map
+- **rfmix_genmap**: genetic map for all chromosomes. 3 tab delimited columns. 1- chromsome, 2- bp position, 3-recombination rate
 - **smpmap**: contains all reference individuals. space delimited file with IDs in first column and ancestry in second.
 - **admix_samples**: list of admixed sample IDs. 1 column
 - **ref**: prefix not including chromosome number and path to 1000 genome reference .hap.gz, .legend.gz and .sample files. for example, provide this:
@@ -87,25 +86,19 @@ if the files are named as:
 ```
 /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000GP_Phase3_chr1.legend.gz
 ```
-- **chr_gmap**: path to genetic map files for individual chromosomes.
-- **nanc**: number of ancestries in reference panel
+- **chr_gmap**: path to genetic map files for individual chromosomes. 3 space delimited columns. 1-position bp, 2-Rate(cM/Mb) 3- Map(cM)
+- **mincM**: minimum cM length of IBD segments to use in IBDne program
 
 
 
 ## 5. Run Snakemake
 
 ```bash
-# 1. Activate conda environment
-source /share/hennlab/progs/miniconda3/etc/profile.d/conda.sh
-conda activate IBDne-env
-
-# 2. Dry run: always run first with -n flag to make sure the workflow will execute properly
+# Dry run: always run first with -n flag to make sure the workflow will execute properly
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20 -n
-
-# 2.1 Generate DAG (optional!)
+# Generate DAG
 /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20 -n --rulegraph | dot -Tpng > rulegraph.png
-
-# 3. Run pipeline
+# Run pipeline
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20
 
 ```

@@ -9,4 +9,4 @@ for chr in `seq 1 22`; do cat results/IBD-segs/${DATASET}.chr${chr}.phased.fille
 cat results/IBD-segs/${DATASET}.chr*.phased.filled.anc${ANC}.ibd > results/IBD-segs/${DATASET}.phased.filled.anc${ANC}.ibd
 
 # calculate adjusted number of pairs of haplotypes
-cat results/RFmix/${DATASET}.chr*.vit.tsv | java -jar progs/filtercolumns.jar 1 ${ADMIDS} | python scripts/adjust_npairs.py ${ANC} > results/IBDne/${DATASET}.anc${anc}_npairs
+cat results/RFmix/${DATASET}.chr*.vit.tsv | java -jar progs/filtercolumns.jar 1 ${ADMIDS} | python scripts/adjust_npairs.py ${ANC} > results/IBDne/${DATASET}.anc${ANC}_npairs

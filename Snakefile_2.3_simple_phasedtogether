@@ -5,6 +5,8 @@ Authors: Mira Mastoras, Austin Reynolds
 """
 
 import os
+import pandas as pd
+import numpy as np
 
 # -------
 # SET-UP
@@ -16,11 +18,25 @@ GMAP = config['chr_gmap'] # path to genetic map files for each chromosome
 SMPMAP = config['smpmap']
 ADMIX = config['admix_samples']
 REF=config['ref'] # path to reference haps/sample/legend files, including prefix.
-NANC=config['nanc']
+MINCM=config['mincM']
 CHR = [i for i in range(1,23)]
 
+# Get string containing list of reference pops for scripts msp_to_bed.R and plot_karyogram.R
+samples = pd.read_csv(SMPMAP, sep='\t', header = None)
+ref_pops = np.unique(np.array(samples.iloc[:,1]))
+ref_pops = sorted(ref_pops.tolist())
+NANC=len(ref_pops) # get number of ref ancestries
+ref_pops = ",".join(ref_pops)
+
+# get sequence of 1 : num ancestries to define ibdne input
 anc_list = [i for i in range(1,NANC+1)]
 
+# Get first six admixed samples to plot their karyograms after RFmix
+samples = pd.read_csv(ADMIX, header = None)
+admix_toplot = np.array(samples.iloc[0:6,0])
+admix_toplot = admix_toplot.tolist()
+
+# Input functions
 def chrom_combine_inputs(wildcards):
   files = expand("results/phasing/{dataset}.chr{chrnum}.phased.vcf", chrnum=CHR, dataset=DATASET)
   return files
@@ -35,10 +51,9 @@ def prep_ibdne_input(wildcards):
 
 rule all:
   input:
-    expand("results/RFmix/{dataset}.chr{chrnum}.msp.tsv", dataset = DATASET, chrnum = CHR),
-    expand("results/RFmix/{dataset}.chr{chrnum}.fb.tsv", dataset = DATASET, chrnum = CHR),
-    expand("results/IBD-segs/{dataset}.chr{chrnum}.phased.filled.allanc.ibd",dataset = DATASET, chrnum = CHR ),
-    expand("results/IBDne/{dataset}.anc{anc}_2cM.ibdne.ne", dataset = DATASET, anc=anc_list)
+    expand("results/IBDne/{dataset}.anc{anc}_{cm}cM.ibdne.ne", dataset = DATASET, anc=anc_list, cm=MINCM),
+    expand("results/plots/{dataset}.{adm}.rfmix.karogram.png",  adm = admix_toplot, dataset = DATASET),
+    expand("results/plots/{dataset}.ibdne.pdf",  dataset = DATASET)
 
 # ---------
 #  Phasing
@@ -117,9 +132,9 @@ rule run_rfmix:
     rfmix -f {input.admix} -r {input.ref} -m {SMPMAP} -g {GENMAP} -o {params} --chromosome={wildcards.chrnum}
     """
 
-# ----------
-# Get IBD
-# ----------
+# ----------------
+# Get IBD segments
+# ----------------
 
 rule convert_germline:
   input:
@@ -169,12 +184,12 @@ rule convert_msp:
     msp = "results/RFmix/{dataset}.chr{chrnum}.msp.tsv",
     bim = "results/phasing/{dataset}.chr{chrnum}.bim"
   output:
-    "results/RFmix/{dataset}.chr{chrnum}.vit.tsv",
-    "results/RFmix/{dataset}.chr{chrnum}.vit.tsv.fixed"
+    vit = "results/RFmix/{dataset}.chr{chrnum}.vit.tsv",
+    fixed = "results/RFmix/{dataset}.chr{chrnum}.vit.tsv.fixed"
   shell:
     """
-    python scripts/msp_to_vit.py {input.msp} {input.bim} {output}
-    bash reformat_vit.sh {input.msp} {input.bim} {output} {wildcards.chrnum}
+    python scripts/msp_to_vit.py {input.msp} {input.bim} {output.vit}
+    bash scripts/reformat_vit.sh {input.msp} {input.bim} {output.vit} {wildcards.chrnum}
     """
 
 rule add_ancestry:
@@ -251,10 +266,52 @@ rule ibdne:
     npairs = "results/IBDne/{dataset}.anc{anc}_npairs",
     map = "results/phasing/{dataset}.allchr.phased.cm.map"
   output:
-    "results/IBDne/{dataset}.anc{anc}_2cM.ibdne.ne"
+    "results/IBDne/{dataset}.anc{anc}_{cm}cM.ibdne.ne"
   params:
-    "results/IBDne/{dataset}.anc{anc}_2cM.ibdne"
+    "results/IBDne/{dataset}.anc{anc}_{cm}cM.ibdne"
   shell:
     """
-    cat {input.ibd} | java -jar progs/ibdne.07May18.6a4.jar map={input.map} nthreads=12 mincm=2 npairs=`cat {input.npairs}` filtersamples=false out={output}
+    cat {input.ibd} | java -jar progs/ibdne.07May18.6a4.jar map={input.map} nthreads=12 mincm={MINCM} npairs=`cat {input.npairs}` filtersamples=false out={output}
+    """
+# ----------
+#  Plotting
+# ----------
+
+rule plot_ibdne:
+  input:
+    expand("results/IBDne/{dataset}.anc{anc}_{cm}cM.ibdne.ne", dataset=DATASET, anc=anc_list, cm=MINCM)
+  output:
+    "results/plots/{dataset}.ibdne.pdf"
+  params:
+    prefix = "results/IBDne/{wildcards.dataset}.anc",
+    suffix = "_{wildcards.cm}cM.ibdne.ne"
+  shell:''
+    """
+    Rscript scripts/plot_ibdne.R {params.prefix} {params.suffix} {output} {ref_pops} {NANC}
+    """
+
+rule msp_to_bed:
+  input:
+    expand("results/RFmix/{dataset}.chr{chrnum}.msp.tsv", dataset=DATASET, chrnum=CHR)
+  output:
+    "results/plots/bedfiles/{dataset}.{adm}.0.BED",
+    "results/plots/bedfiles/{dataset}.{adm}.1.BED"
+  threads: 10
+  params:
+    input = "results/RFmix/",
+    out = "results/plots/bedfiles/{dataset}."
+  shell:
+    """
+    Rscript scripts/msp_to_bed.R {params.input} {params.out} {threads} {ref_pops}
+    """
+
+rule plot_rfmix:
+  input:
+    a = "results/plots/bedfiles/{dataset}.{adm}.0.BED",
+    b = "results/plots/bedfiles/{dataset}.{adm}.1.BED"
+  output:
+    "results/plots/{dataset}.{adm}.rfmix.karogram.png"
+  shell:
+    """
+    python scripts/plot_karyogram.py --bed_a {input.a} --bed_b {input.b} --ind {wildcards.adm} --pop-order {ref_pops} --out {output}
     """
