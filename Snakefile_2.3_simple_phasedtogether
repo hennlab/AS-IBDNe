@@ -283,8 +283,8 @@ rule plot_ibdne:
   output:
     "results/plots/{dataset}.ibdne.pdf"
   params:
-    prefix = "results/IBDne/{wildcards.dataset}.anc",
-    suffix = "_{wildcards.cm}cM.ibdne.ne"
+    prefix = "results/IBDne/{dataset}.anc",
+    suffix = expand("_{cm}cM.ibdne.ne", cm=MINCM)
   shell:''
     """
     Rscript scripts/plot_ibdne.R {params.prefix} {params.suffix} {output} {ref_pops} {NANC}
@@ -313,5 +313,5 @@ rule plot_rfmix:
     "results/plots/{dataset}.{adm}.rfmix.karogram.png"
   shell:
     """
-    python scripts/plot_karyogram.py --bed_a {input.a} --bed_b {input.b} --ind {wildcards.adm} --pop-order {ref_pops} --out {output}
+    python scripts/plot_karyogram.py --bed_a {input.a} --bed_b {input.b} --ind {wildcards.adm} --pop_order {ref_pops} --out {output}
     """

@@ -9,8 +9,9 @@ Creating conda environment (first time only):
 source /share/hennlab/progs/miniconda3/etc/profile.d/conda.sh
 conda create -n IBDne-env
 conda activate IBDne-env
-conda install -c bioconda rfmix
+conda install -c bioconda htslib tabix bcftools rfmix
 conda install pandas
+
 ```
 Activating conda environment (before running pipeline)
 ```bash
@@ -30,6 +31,7 @@ Please create a working directory to run the Snakefile in. The structure of the 
     |__ {dataset}.fam*
     |__ ref_smpmap.txt
     |__ admixed_ids.txt
+    |__ centromeres_hg19.bed*
 |__ scripts*
     |__ shapeit_to_germline.py*
     |__ msp_to_vit.py*
@@ -78,7 +80,7 @@ mincM: 2
 Explanation of config input parameters:
 - **dataset**: Name of the dataset. needs to match prefix of input bim/bed/fam files : {dataset}.bed /.bim /.fam
 - **rfmix_genmap**: genetic map for all chromosomes. 3 tab delimited columns. 1- chromsome, 2- bp position, 3-recombination rate
-- **smpmap**: contains all reference individuals. space delimited file with IDs in first column and ancestry in second.
+- **smpmap**: contains all reference individuals. tab delimited file with IDs in first column and ancestry in second.
 - **admix_samples**: list of admixed sample IDs. 1 column
 - **ref**: prefix not including chromosome number and path to 1000 genome reference .hap.gz, .legend.gz and .sample files. for example, provide this:
 ```

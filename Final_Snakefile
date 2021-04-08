@@ -22,7 +22,7 @@ MINCM=config['mincM']
 CHR = [i for i in range(1,23)]
 
 # Get string containing list of reference pops for scripts msp_to_bed.R and plot_karyogram.R
-samples = pd.read_csv(SMPMAP, sep=' ', header = None)
+samples = pd.read_csv(SMPMAP, sep='\t', header = None)
 ref_pops = np.unique(np.array(samples.iloc[:,1]))
 ref_pops = sorted(ref_pops.tolist())
 NANC=len(ref_pops) # get number of ref ancestries
@@ -272,7 +272,7 @@ rule ibdne:
     "results/IBDne/{dataset}.anc{anc}_{cm}cM.ibdne"
   shell:
     """
-    cat {input.ibd} | java -jar progs/ibdne.07May18.6a4.jar map={input.map} nthreads=12 mincm={MINCM} npairs=`cat {input.npairs}` filtersamples=false out={output}
+    cat {input.ibd} | java -jar progs/ibdne.07May18.6a4.jar map={input.map} nthreads=12 mincm={MINCM} npairs=`cat {input.npairs}` filtersamples=false out={params}
     """
 # ----------
 #  Plotting
