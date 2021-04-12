@@ -11,6 +11,9 @@ conda create -n IBDne-env
 conda activate IBDne-env
 conda install -c bioconda htslib tabix bcftools rfmix
 conda install pandas
+conda install -c r r-magrittr r-doparallel 
+conda install -c conda-forge matplotlib brewer2mpl 
+conda install -c dranew shapeit
 
 ```
 Activating conda environment (before running pipeline)
