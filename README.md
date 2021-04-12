@@ -111,9 +111,23 @@ nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 2
 
 The snakefile will automatically generate karograms for the first three individuals in your admixed data text file. If you want to generate these plots for other individuals manually, re-run the script in rule "plot_rfmix".
 
-## 7. Acknowledgements and sources:
+## 7. Checking concordance between rfmix and admixture
+
+If your reference panel has more than 3 populations, its recommended that you run admixture and compare it to the rfmix results as a check. To do this, use Alicia Martin's script `lai_global.py` to convert the bedfiles output by the rule `msp_to_bed` and compare to the admixture output Q files.
+
+Alicia's script:
+https://github.com/armartin/ancestry_pipeline#estimate-global-ancestry-proportions-from-local-ancestry-inference
+
+Admixture tutorial: https://github.com/hennlab/training/blob/main/common_analyses/admixture_pong.md
+
+## 8. Acknowledgements and sources:
 
 - Rfmix version 2.3: https://github.com/slowkoni/rfmix/blob/master/MANUAL.md
 - Scripts for processing rfmix 1.5 output to IBDne input: https://faculty.washington.edu/sguy/asibdne/
+    > Note: One change was made to the script `filter_gapfilled_ibd_ancestry.py` in line 55:
+    `index1 = ids.index(id1)*2+hap1-1` became `index1 = (ids.index(id1)*2+hap1-1) -1` and in line 56:
+    `index2 = ids.index(id2)*2+hap2-1` became `index2 = (ids.index(id2)*2+hap2-1) -1`
+
 - IBDne: http://faculty.washington.edu/browning/ibdne.html
 - filtercolumns.jar https://faculty.washington.edu/browning/beagle_utilities/utilities.html
+- Script to convert msp format to bed format: Gerald Van Eeden
