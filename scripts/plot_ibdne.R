@@ -20,7 +20,7 @@ for(anc in 1:nanc){
   print(filename)
   x=read.table(filename,header=T)
   col2="#00000080"
-  plot(x[,1],x[,2],type="l",log="y",xlim=c(0,100),ylim=c(1e3,1e7),xlab="g (generations before present)",ylab="Ne (effective population size)",xaxs="i",yaxt="n",las=1,lwd=2.5,lty=32,col="lightgray",main=paste(pops[anc],"ancestry"))
+  plot(x[,1],x[,2],type="l",log="y",xlim=c(0,60),ylim=c(1e2,1e6),xlab="g (generations before present)",ylab="Ne (effective population size)",xaxs="i",yaxt="n",las=1,lwd=2.5,lty=32,col="lightgray",main=paste(pops[anc],"ancestry"))
   abline(h=c(1e2,1e3,1e4,1e5,1e6,1e7),v=seq(20,80,20),col="lightgray",lty="dotted")
   axis(2,at=c(1e3,1e4,1e5,1e6,1e7),labels=c(expression(10^3),expression(10^4),expression(10^5),expression(10^6),expression(10^7)),las=1)
   polygon(c(x[,1],x[nrow(x):1,1]),c(x[,3],x[nrow(x):1,4]),col=colors[anc],density=-1,border=col2)
