@@ -19,6 +19,7 @@ SMPMAP = config['smpmap']
 ADMIX = config['admix_samples']
 REF=config['ref'] # path to reference haps/sample/legend files, including prefix.
 MINCM=config['mincM']
+COLORS= config['colors']
 CHR = [i for i in range(1,23)]
 
 # Get string containing list of reference pops for scripts msp_to_bed.R and plot_karyogram.R
@@ -27,6 +28,8 @@ ref_pops = np.unique(np.array(samples.iloc[:,1]))
 ref_pops = sorted(ref_pops.tolist())
 NANC=len(ref_pops) # get number of ref ancestries
 ref_pops = ",".join(ref_pops)
+
+
 
 # get sequence of 1 : num ancestries to define ibdne input
 anc_list = [i for i in range(1,NANC+1)]
@@ -288,7 +291,7 @@ rule plot_ibdne:
     suffix = expand("_{cm}cM.ibdne.ne", cm=MINCM)
   shell:''
     """
-    Rscript scripts/plot_ibdne.R {params.prefix} {params.suffix} {output} {ref_pops} {NANC}
+    Rscript scripts/plot_ibdne.R {params.prefix} {params.suffix} {output} {ref_pops} {NANC} {COLORS}
     """
 
 rule msp_to_bed:
@@ -314,5 +317,5 @@ rule plot_rfmix:
     "results/plots/{dataset}.{adm}.rfmix.karogram.png"
   shell:
     """
-    python scripts/plot_karyogram.py --bed_a {input.a} --bed_b {input.b} --ind {wildcards.adm} --pop_order {ref_pops} --out {output}
+    python scripts/plot_karyogram.py --bed_a {input.a} --bed_b {input.b} --ind {wildcards.adm} --pop_order {ref_pops} --colors {COLORS} --out {output}
     """

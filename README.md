@@ -11,8 +11,8 @@ conda create -n IBDne-env
 conda activate IBDne-env
 conda install -c bioconda htslib tabix bcftools rfmix
 conda install pandas
-conda install -c r r-magrittr r-doparallel 
-conda install -c conda-forge matplotlib brewer2mpl 
+conda install -c r r-magrittr r-doparallel
+conda install -c conda-forge matplotlib brewer2mpl
 conda install -c dranew shapeit
 
 ```
@@ -78,6 +78,8 @@ ref: /share/hennlab/reference/1000G_Phase3_haps-sample-legend/1000GP_Phase3/1000
 chr_gmap: /share/hennlab/reference/recombination_maps/genetic_map_HapMapII_GRCh37/
 
 mincM: 2
+
+colors: green,purple,red,blue
 ```
 
 Explanation of config input parameters:
@@ -95,6 +97,7 @@ if the files are named as:
 ```
 - **chr_gmap**: path to genetic map files for individual chromosomes. 3 space delimited columns. 1-position bp, 2-Rate(cM/Mb) 3- Map(cM)
 - **mincM**: minimum cM length of IBD segments to use in IBDne program
+- **colors**: comma delimited list of colors for the output plots (karyograms and ibdne) to take on, in alphabetical order of ancestry. For example, if the reference populations are CHB,GBR,LWK,NAMA then the colors "green,purple,red,blue" will be assigned as CHB=green, GBR=purple, LWK=red, NAMA=blue.
 
 
 
