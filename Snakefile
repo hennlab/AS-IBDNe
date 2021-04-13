@@ -34,9 +34,9 @@ ref_pops = ",".join(ref_pops)
 # get sequence of 1 : num ancestries to define ibdne input
 anc_list = [i for i in range(1,NANC+1)]
 
-# Get first six admixed samples to plot their karyograms after RFmix
+# convert admixed samples to list for plotting karyograms
 samples = pd.read_csv(ADMIX, header = None)
-admix_toplot = np.array(samples.iloc[0:6,0])
+admix_toplot = np.array(samples)
 admix_toplot = admix_toplot.tolist()
 
 # Input functions

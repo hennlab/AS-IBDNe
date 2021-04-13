@@ -100,7 +100,6 @@ if the files are named as:
 - **colors**: comma delimited list of colors for the output plots (karyograms and ibdne) to take on, in alphabetical order of ancestry. For example, if the reference populations are CHB,GBR,LWK,NAMA then the colors "green,purple,red,blue" will be assigned as CHB=green, GBR=purple, LWK=red, NAMA=blue.
 
 
-
 ## 5. Run Snakemake
 
 ```bash
@@ -113,11 +112,8 @@ nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 2
 
 ```
 
-## 6. Plot karyograms after running RFMix
 
-The snakefile will automatically generate karograms for the first three individuals in your admixed data text file. If you want to generate these plots for other individuals manually, re-run the script in rule "plot_rfmix".
-
-## 7. Checking concordance between rfmix and admixture
+## 6. Checking concordance between rfmix and admixture
 
 If your reference panel has more than 3 populations, its recommended that you run admixture and compare it to the rfmix results as a check. To do this, use Alicia Martin's script `lai_global.py` to convert the bedfiles output by the rule `msp_to_bed` and compare to the admixture output Q files.
 
@@ -125,6 +121,10 @@ Alicia's script:
 https://github.com/armartin/ancestry_pipeline#estimate-global-ancestry-proportions-from-local-ancestry-inference
 
 Admixture tutorial: https://github.com/hennlab/training/blob/main/common_analyses/admixture_pong.md
+
+## 7. Output plots
+
+This pipeline will output rfmix karyogram plots for every admixed individual, and 1 ibdne plot showing effective population size estimates for each reference population
 
 ## 8. Acknowledgements and sources:
 
