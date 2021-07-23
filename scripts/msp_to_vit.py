@@ -34,7 +34,7 @@ if "NA" in frames:
 ## next: for each value in frames, append [value,6:len(msp) -1] from msp file
 def get_msp_values(index):
     list = msp.iloc[index,6:(len(msp.columns)-1)]
-    int_list = [int(i) + 1 for i in list]
+    int_list = [int(i) + 1 for i in list] # add 1 to all ancestry values
     return int_list
 
 vit_list = [get_msp_values(i) for i in frames ]
