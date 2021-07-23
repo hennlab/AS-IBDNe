@@ -1,5 +1,4 @@
 ## Converts RFmix 2.3 output file .msp.tsv to RFmix 1.5 output format "Viterbi.txt"
-## Author: Mira Mastoras (mnmastoras@ucdavis.edu)
 ## Usage: python msp_to_vit.py chr21.msp.tsv americans_subset_remove.chr21.bim chr21.viterbi.tsv
 
 import sys
@@ -10,6 +9,7 @@ import pandas as pd
 msp = pd.read_csv(sys.argv[1], sep='\t', header=[1,1])
 bim = pd.read_csv(sys.argv[2], sep='\t', header = None)
 outfile = sys.argv[3]
+
 # make list of bim file snp positions
 bim_snps = list(bim[3])
 
@@ -34,7 +34,7 @@ if "NA" in frames:
 ## next: for each value in frames, append [value,6:len(msp) -1] from msp file
 def get_msp_values(index):
     list = msp.iloc[index,6:(len(msp.columns)-1)]
-    int_list = [int(i) for i in list]
+    int_list = [int(i) + 1 for i in list]
     return int_list
 
 vit_list = [get_msp_values(i) for i in frames ]
