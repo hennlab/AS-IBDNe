@@ -31,9 +31,10 @@ frames = [check_range(f) for f in bim_snps ]
 if "NA" in frames:
     raise Exception("a snp is missing from msp file")
 
-## next: for each value in frames, append [value,6:len(msp) -1] from msp file
+## next: for each value in frames, append [value,6:len(msp)] from msp file
+## iloc function is exclusive, so don't need to adjust for python 0 based indexing
 def get_msp_values(index):
-    list = msp.iloc[index,6:(len(msp.columns)-1)]
+    list = msp.iloc[index,6:len(msp.columns)]
     int_list = [int(i) + 1 for i in list] # add 1 to all ancestry values
     return int_list
 
