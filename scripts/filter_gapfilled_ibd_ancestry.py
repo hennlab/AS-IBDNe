@@ -52,8 +52,8 @@ for line in mergedfile:
     for segment in ibd[id1][id2]:
         p1,p2,hap1,hap2 = segment
         if pos1 > p1 or pos2 < p2: continue
-        index1 = (ids.index(id1)*2+hap1-1) -1
-        index2 = (ids.index(id2)*2+hap2-1) -1
+        index1 = (ids.index(id1)*2+hap1-1)
+        index2 = (ids.index(id2)*2+hap2-1)
         oldpos = p1
         for i,x in enumerate(pos):
             if x>=p1 and x<=p2:
