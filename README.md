@@ -109,7 +109,6 @@ nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 2
 /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20 -n --rulegraph | dot -Tpng > rulegraph.png
 # Run pipeline
 nice /share/hennlab/progs/miniconda3/bin/snakemake --configfile config.yaml -j 20
-
 ```
 
 
@@ -130,10 +129,6 @@ This pipeline will output rfmix karyogram plots for every admixed individual, an
 
 - Rfmix version 2.3: https://github.com/slowkoni/rfmix/blob/master/MANUAL.md
 - Scripts for processing rfmix 1.5 output to IBDne input: https://faculty.washington.edu/sguy/asibdne/
-    > Note: One change was made to the script `filter_gapfilled_ibd_ancestry.py` in line 55:
-    `index1 = ids.index(id1)*2+hap1-1` became `index1 = (ids.index(id1)*2+hap1-1) -1` and in line 56:
-    `index2 = ids.index(id2)*2+hap2-1` became `index2 = (ids.index(id2)*2+hap2-1) -1`
-
 - IBDne: http://faculty.washington.edu/browning/ibdne.html
 - filtercolumns.jar https://faculty.washington.edu/browning/beagle_utilities/utilities.html
 - Script to convert msp format to bed format: Gerald Van Eeden
